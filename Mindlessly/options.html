@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Mindlessly &bull; Options</title>
+		<meta charset="UTF-8" />
+		<link rel="stylesheet" href="style/options.css" />
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<div>
+					<h1>Mindlessly</h1>
+					<h2>Options</h2>
+				</div>
+				<div class="logo"><div class="o"></div></div>
+			</header>
+			<section class="manage-websites">
+				<h2>Manage websites</h2>
+				<h3 class="description">
+					Add or remove websites that you'd like to browse
+					mindfully.
+				</h3>
+				<span class="separator"></span>
+				<ul class="url-list">
+					<!-- list items with url and remove button / options.js -->
+				</ul>
+				<form class="add-url-container flex">
+					<input
+						class="add-url-input"
+						type="text"
+						autocomplete="off"
+						placeholder="https://example.com/"
+					/>
+					<button class="add-url-button hidden primary add">
+						Add website
+					</button>
+				</form>
+				<p class="add-url-error hint">
+					<!-- URL error message / options.js -->
+				</p>
+				<p class="hint">
+					The URL entered must match the page URL exactly. <br />
+					💡 Tip: copy and paste the URL instead of typing it
+					yourself.
+				</p>
+			</section>
+
+			<section class="manage-time hollow">
+				<label class="manage-time-toggle">
+					<input
+						class="manage-time-toggle-checkbox"
+						type="checkbox"
+					/>
+					Activate only during certain times
+				</label>
+				<h3 class="description">
+					Activates the extension only during a specific set time
+					period.
+				</h3>
+				<div class="time-edit-container hidden">
+					<form class="time-edit-select flex">
+						<div class="flex col">
+							<label>From</label>
+							<select name="from" id="from"></select>
+						</div>
+						<div class="flex col">
+							<label>To</label>
+							<select name="to" id="to"></select>
+						</div>
+					</form>
+					<p class="time-edit-response hint">
+						<!-- displays success message on time change / options.js -->
+					</p>
+					<div class="time-edit-change-format-container">
+						<button class="time-edit-change-format secondary">
+							<!-- toggle between 12 and 24 hr format / options.js -->
+						</button>
+					</div>
+				</div>
+			</section>
+			<footer></footer>
+		</div>
+	</body>
+	<script type="module" src="js/options.js"></script>
+	<script src="js/footer.js"></script>
+</html>
