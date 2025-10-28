@@ -667,9 +667,9 @@ class Intention extends HTMLElement {
 				const relativeY = (100 * absoluteY) / window.innerHeight //-> %
 				vector = { x: relativeX, y: relativeY }
 
-				this.container.style.transform = 'none'
-				this.container.style.left = `${vector.x}%`
-				this.container.style.top = `${vector.y}%`
+				this.container.style.setProperty('transform', 'none', 'important')
+				this.container.style.setProperty('left', `${vector.x}%`, 'important')
+				this.container.style.setProperty('top', `${vector.y}%`, 'important')
 			}
 		})
 
@@ -995,9 +995,9 @@ class Intention extends HTMLElement {
 			const storage = sessionStorage.getItem(`${extensionID}-position`)
 			const pos = JSON.parse(storage)
 			if (pos.x > -1 && pos.y > -1) {
-				this.container.style.transform = 'none'
-				this.container.style.left = `${pos.x}%`
-				this.container.style.top = `${pos.y}%`
+				this.container.style.setProperty('transform', 'none', 'important')
+				this.container.style.setProperty('left', `${pos.x}%`, 'important')
+				this.container.style.setProperty('top', `${pos.y}%`, 'important')
 			}
 		}
 
