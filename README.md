@@ -1,16 +1,16 @@
 # Mindlessly 🎯
 
-A Chrome extension that transforms mindless browsing into mindful, productive sessions with intentional focus and smart timer management.
+A Chrome extension that transforms mindless browsing into mindful, productive sessions with purposeful focus and smart timer management.
 
 ## ✨ Features
 
-- **Intention Setting**: Force yourself to state your purpose before browsing distracting websites
+- **Purpose Setting**: Force yourself to state your purpose before browsing distracting websites
 - **Smart Timer System**: Built-in session timers (1min, 10min, or custom duration) with visual countdown
 - **Schedule Control**: Set specific hours when the extension should be active (e.g., work hours only)
 - **Visual Progress**: Circular timer with real-time progress indicators
 - **Session Management**: Extend sessions or start fresh tasks when timers complete
-- **Drag & Drop Interface**: Moveable intention box for personalized positioning
-- **Cross-session Persistence**: Maintains your intentions and timers across page reloads
+- **Drag & Drop Interface**: Moveable purpose box for personalized positioning
+- **Cross-session Persistence**: Maintains your purpose and timers across page reloads
 
 ## 🚀 Installation
 
@@ -28,7 +28,7 @@ A Chrome extension that transforms mindless browsing into mindful, productive se
 
 1. **Add Websites**: Use the popup or options page to add distracting websites you want to browse mindfully
 2. **Set Your Schedule**: Configure active hours in the options page (optional)
-3. **Browse Mindfully**: When you visit a tracked site, you'll see an intention prompt
+3. **Browse Mindfully**: When you visit a tracked site, you'll see a purpose prompt
 4. **State Your Purpose**: Type what you want to accomplish on this visit
 5. **Choose Timer**: Select a timer duration to stay focused (1min, 10min, or custom)
 6. **Stay Accountable**: The timer keeps you on track with visual progress
@@ -40,7 +40,7 @@ Access the options page by:
 - Or navigate to `chrome://extensions` → Mindlessly → Options
 
 ### Options Available:
-- **Manage Websites**: Add/remove sites you want to browse intentionally
+- **Manage Websites**: Add/remove sites you want to browse mindfully
 - **Time Restrictions**: Set active hours (e.g., only during 9 AM - 5 PM)
 - **Time Format**: Toggle between 12-hour and 24-hour display
 
