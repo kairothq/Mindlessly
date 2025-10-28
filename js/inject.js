@@ -18,22 +18,24 @@ template.innerHTML = /*html*/ `
 		
 		/* Blurs the page */
 		#veil {
-			position: fixed;
-			top: 0;
-			left: 0;
-			z-index: 99999;
-			display: block;
-			width: 100%;
-			height: 100%;
-			background-color: rgba(0, 0, 0, 0.4);
-			visibility: hidden;
-			opacity: 0;
-			backdrop-filter: blur(16px);
+			position: fixed !important;
+			top: 0 !important;
+			left: 0 !important;
+			z-index: 999999 !important;
+			display: block !important;
+			width: 100% !important;
+			height: 100% !important;
+			background-color: rgba(0, 0, 0, 0.4) !important;
+			visibility: hidden !important;
+			opacity: 0 !important;
+			backdrop-filter: blur(16px) !important;
+			pointer-events: none !important;
 		}
 
 		#veil.isVisible {
-			visibility: visible;
-			opacity: 1;
+			visibility: visible !important;
+			opacity: 1 !important;
+			pointer-events: all !important;
 		}
 
 		/* 
@@ -46,22 +48,23 @@ template.innerHTML = /*html*/ `
 			--color-accent: #000;
 			--color-highlight: #3a3b3c;
 
-			position: fixed;
-			top: 32px;
-			left: 50%;
-			z-index: 9999999;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 128px;
-			padding: 8px 42px 8px 16px;
-			color: #000;
-			font-size: var(--font-size);
-			background: #fff;
-			border-radius: 96px;
-			box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
-			transform: translateX(-50%);
-			cursor: grab;
+			position: fixed !important;
+			top: 32px !important;
+			left: 50% !important;
+			z-index: 9999999 !important;
+			display: flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+			min-width: 128px !important;
+			padding: 8px 42px 8px 16px !important;
+			color: #000 !important;
+			font-size: var(--font-size) !important;
+			background: #fff !important;
+			border-radius: 96px !important;
+			box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px !important;
+			transform: translateX(-50%) !important;
+			cursor: grab !important;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 		}
 
 		.container.has-timer {
@@ -158,20 +161,21 @@ template.innerHTML = /*html*/ `
 		* Timer Selection UI
 		*/
 		.timer-selection {
-			position: fixed;
-			top: 120px;
-			left: 50%;
-			z-index: 9999998;
-			display: none;
-			flex-direction: column;
-			gap: 12px;
-			padding: 20px;
-			background: #fff;
-			border-radius: 16px;
-			box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
-			transform: translateX(-50%);
-			min-width: 280px;
-			color: #000;
+			position: fixed !important;
+			top: 120px !important;
+			left: 50% !important;
+			z-index: 9999998 !important;
+			display: none !important;
+			flex-direction: column !important;
+			gap: 12px !important;
+			padding: 20px !important;
+			background: #fff !important;
+			border-radius: 16px !important;
+			box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px !important;
+			transform: translateX(-50%) !important;
+			min-width: 280px !important;
+			color: #000 !important;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 		}
 
 		.timer-selection h3 {
@@ -180,7 +184,7 @@ template.innerHTML = /*html*/ `
 		}
 
 		.timer-selection.visible {
-			display: flex;
+			display: flex !important;
 		}
 		
 		.timer-selection.compact {
@@ -360,25 +364,26 @@ template.innerHTML = /*html*/ `
 		* Timer Complete Dialog
 		*/
 		.timer-complete-dialog {
-			position: fixed;
-			top: 50%;
-			left: 50%;
-			z-index: 9999997;
-			display: none;
-			flex-direction: column;
-			gap: 20px;
-			padding: 30px;
-			background: #fff;
-			border-radius: 16px;
-			box-shadow: rgba(100, 100, 111, 0.3) 0px 7px 29px 0px;
-			transform: translate(-50%, -50%);
-			min-width: 400px;
-			max-width: 500px;
-			text-align: center;
+			position: fixed !important;
+			top: 50% !important;
+			left: 50% !important;
+			z-index: 9999997 !important;
+			display: none !important;
+			flex-direction: column !important;
+			gap: 20px !important;
+			padding: 30px !important;
+			background: #fff !important;
+			border-radius: 16px !important;
+			box-shadow: rgba(100, 100, 111, 0.3) 0px 7px 29px 0px !important;
+			transform: translate(-50%, -50%) !important;
+			min-width: 400px !important;
+			max-width: 500px !important;
+			text-align: center !important;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 		}
 
 		.timer-complete-dialog.visible {
-			display: flex;
+			display: flex !important;
 		}
 
 		.dialog-buttons {
@@ -1034,5 +1039,58 @@ class Intention extends HTMLElement {
 }
 
 customElements.define('intention-container', Intention)
-const container = document.createElement('intention-container')
-document.body.prepend(container)
+
+// YouTube-specific initialization
+function initializeExtension() {
+	// Remove any existing containers to prevent duplicates
+	const existingContainers = document.querySelectorAll('intention-container')
+	existingContainers.forEach(container => container.remove())
+	
+	// Create and inject new container
+	const container = document.createElement('intention-container')
+	
+	// YouTube-specific insertion method
+	if (window.location.hostname.includes('youtube.com')) {
+		// Wait for YouTube to finish loading and use a more stable insertion point
+		const insertContainer = () => {
+			const body = document.body || document.documentElement
+			if (body) {
+				body.appendChild(container)
+				// Ensure container stays visible on YouTube
+				setTimeout(() => {
+					if (container.parentNode) {
+						container.style.setProperty('display', 'block', 'important')
+						container.style.setProperty('visibility', 'visible', 'important')
+					}
+				}, 100)
+			}
+		}
+		
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', insertContainer)
+		} else {
+			insertContainer()
+		}
+		
+		// Re-inject if YouTube navigation removes it
+		let observer = new MutationObserver(() => {
+			if (!document.body.contains(container)) {
+				document.body.appendChild(container)
+			}
+		})
+		observer.observe(document.body, { childList: true, subtree: true })
+		
+	} else {
+		// Standard insertion for other sites
+		if (document.body) {
+			document.body.prepend(container)
+		} else {
+			document.addEventListener('DOMContentLoaded', () => {
+				document.body.prepend(container)
+			})
+		}
+	}
+}
+
+// Initialize the extension
+initializeExtension()
