@@ -370,29 +370,30 @@ template.innerHTML = /*html*/ `
 			z-index: 9999997 !important;
 			display: none !important;
 			flex-direction: column !important;
-			gap: 24px !important;
-			padding: 40px !important;
+			gap: 20px !important;
+			padding: 32px !important;
 			background: #fff !important;
 			border-radius: 16px !important;
 			box-shadow: rgba(100, 100, 111, 0.3) 0px 7px 29px 0px !important;
 			transform: translate(-50%, -50%) !important;
-			min-width: 450px !important;
-			max-width: 550px !important;
+			min-width: 400px !important;
+			max-width: 480px !important;
 			text-align: center !important;
 			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 		}
 
 		.timer-complete-dialog h3 {
-			font-size: 28px !important;
+			font-size: 26px !important;
 			font-weight: 700 !important;
 			color: #000 !important;
 			margin: 0 !important;
 		}
 
 		.timer-complete-dialog p {
-			font-size: 18px !important;
+			font-size: 22px !important;
+			font-weight: 500 !important;
 			color: #444 !important;
-			margin: 8px 0 !important;
+			margin: 12px 0 !important;
 			line-height: 1.4 !important;
 		}
 
