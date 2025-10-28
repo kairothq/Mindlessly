@@ -370,16 +370,30 @@ template.innerHTML = /*html*/ `
 			z-index: 9999997 !important;
 			display: none !important;
 			flex-direction: column !important;
-			gap: 20px !important;
-			padding: 30px !important;
+			gap: 24px !important;
+			padding: 40px !important;
 			background: #fff !important;
 			border-radius: 16px !important;
 			box-shadow: rgba(100, 100, 111, 0.3) 0px 7px 29px 0px !important;
 			transform: translate(-50%, -50%) !important;
-			min-width: 400px !important;
-			max-width: 500px !important;
+			min-width: 450px !important;
+			max-width: 550px !important;
 			text-align: center !important;
 			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+		}
+
+		.timer-complete-dialog h3 {
+			font-size: 28px !important;
+			font-weight: 700 !important;
+			color: #000 !important;
+			margin: 0 !important;
+		}
+
+		.timer-complete-dialog p {
+			font-size: 18px !important;
+			color: #444 !important;
+			margin: 8px 0 !important;
+			line-height: 1.4 !important;
 		}
 
 		.timer-complete-dialog.visible {
@@ -388,19 +402,19 @@ template.innerHTML = /*html*/ `
 
 		.dialog-buttons {
 			display: flex;
-			gap: 20px;
+			gap: 24px;
 			justify-content: space-between;
 			align-items: center;
 			width: 100%;
-			margin-top: 10px;
+			margin-top: 16px;
 		}
 
 		.dialog-btn {
-			padding: 16px 24px;
+			padding: 18px 28px;
 			border: 2px solid var(--color-accent);
 			border-radius: 8px;
 			cursor: pointer;
-			font-size: 14px;
+			font-size: 18px !important;
 			font-weight: 600;
 			transition: all 0.2s ease, border-width 0.15s ease, transform 0.1s ease;
 			opacity: 1 !important;
@@ -409,7 +423,8 @@ template.innerHTML = /*html*/ `
 			text-align: center;
 			white-space: nowrap;
 			width: auto;
-			min-width: 120px;
+			min-width: 140px;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 		}
 
 		.dialog-btn.primary {
