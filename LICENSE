@@ -1,6 +1,7 @@
 MIT License
 
-Copyright (c) 2021 Alexander Widua
+Original work Copyright (c) 2021 Alexander Widua (With Intention)
+Modified work Copyright (c) 2024 Divy Kairoth (Mindlessly)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +20,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+ATTRIBUTION:
+This project "Mindlessly" is based on the original "With Intention" 
+Chrome extension by Alexander Widua (https://github.com/alexwidua/with-intention).
+
+Significant modifications and enhancements by Divy Kairoth include:
+- Complete rebranding to "Mindlessly"
+- Advanced timer functionality with visual countdown
+- Enhanced UI/UX with custom star icons
+- YouTube compatibility improvements
+- Schedule-based activation features
+- Optimized performance and user experience
+
+Both the original work and modifications are released under the MIT License.
