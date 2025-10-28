@@ -1,6 +1,6 @@
 /**
- * @file Background service worker that watches the browser navigation and
- * injects content scripts if URL matches.
+ * @file Background service worker for Mindlessly extension that watches browser 
+ * navigation and injects content scripts for mindful browsing with timer features.
  */
 
 let STORAGE_CACHE

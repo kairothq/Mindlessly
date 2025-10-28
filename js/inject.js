@@ -1,9 +1,9 @@
 /**
- * @file Content script that gets injected in matching websites
- * and displays the intention field with timer functionality.
+ * @file Content script for Mindlessly that creates the mindful browsing interface
+ * with purpose prompts and smart timer functionality for focused sessions.
  */
 
-const placeholder = "What's your intention?"
+const placeholder = "What's your purpose here?"
 const extensionID = chrome.runtime.id
 const template = document.createElement('template')
 

@@ -1,9 +1,9 @@
 {
-	"name": "With Intention",
-	"author": "Alex Widua",
+	"name": "Mindlessly",
+	"author": "Divy Kairoth",
 	"manifest_version": 3,
-	"version": "0.2",
-	"description": "Browse distracting websites with intention.",
+	"version": "1.0",
+	"description": "Stay focused while browsing with mindful intentions and smart timers.",
 	"permissions": ["webNavigation", "storage"],
 	"action": {
 		"default_popup": "popup.html",
