@@ -595,9 +595,8 @@ class Intention extends HTMLElement {
 		this.timerText = this.shadowRoot.getElementById('timerText')
 		this.timerCompleteDialog = this.shadowRoot.getElementById('timerCompleteDialog')
 
-		// Focus persistence for LinkedIn and other aggressive sites
+		// Focus persistence only for initial LinkedIn loading
 		this.focusProtection = null
-		this.shouldMaintainFocus = false
 
 		/**
 		 * Handle input events
@@ -607,8 +606,11 @@ class Intention extends HTMLElement {
 			this.veil.classList.add('isVisible')
 			this.container.classList.add('is-editing')
 			draggable = false
-			this.shouldMaintainFocus = true
-			this.startFocusProtection()
+			
+			// Only protect focus on LinkedIn during initial empty state
+			if (window.location.hostname.includes('linkedin.com') && !this.input.innerHTML) {
+				this.startLinkedInFocusProtection()
+			}
 		})
 
 		this.input.addEventListener('blur', (e) => {
@@ -622,7 +624,7 @@ class Intention extends HTMLElement {
 			if (!this.input.innerHTML) {
 				this.input.focus()
 			} else {
-				this.shouldMaintainFocus = false
+				// Stop any focus protection
 				this.stopFocusProtection()
 				
 				sessionStorage.setItem(
@@ -656,48 +658,40 @@ class Intention extends HTMLElement {
 				this.insertAtCursor('&nbsp;')
 			} else if (e.key === 'Enter') {
 				e.preventDefault()
+				// Stop focus protection to allow normal flow
+				this.stopFocusProtection()
 				this.input.blur()
 			}
 		})
 
 		/**
-		 * Focus protection methods for LinkedIn and other aggressive sites
+		 * Minimal focus protection only for LinkedIn's initial loading phase
 		 */
-		this.startFocusProtection = () => {
-			// Clear any existing protection
-			this.stopFocusProtection()
+		this.startLinkedInFocusProtection = () => {
+			// Very targeted protection: only during first 3 seconds of LinkedIn loading
+			let attempts = 0
+			const maxAttempts = 10 // 10 attempts over 3 seconds
 			
-			// LinkedIn-specific: more aggressive focus maintenance
-			if (window.location.hostname.includes('linkedin.com')) {
-				this.focusProtection = setInterval(() => {
-					if (this.shouldMaintainFocus && 
-						document.activeElement !== this.input && 
-						this.input.contentEditable === 'true') {
-						this.focusBeingRestored = true
-						this.input.focus()
-						
-						// Restore cursor to end of content
-						const range = document.createRange()
-						const selection = this.shadowRoot.getSelection()
-						if (this.input.childNodes.length > 0) {
-							range.selectNodeContents(this.input)
-							range.collapse(false)
-							selection.removeAllRanges()
-							selection.addRange(range)
-						}
-					}
-				}, 200) // Check every 200ms for LinkedIn
-			} else {
-				// Other sites: less aggressive checking
-				this.focusProtection = setInterval(() => {
-					if (this.shouldMaintainFocus && 
-						document.activeElement !== this.input && 
-						this.input.contentEditable === 'true') {
-						this.focusBeingRestored = true
-						this.input.focus()
-					}
-				}, 500) // Check every 500ms for other sites
-			}
+			this.focusProtection = setInterval(() => {
+				attempts++
+				
+				// Stop after 3 seconds regardless
+				if (attempts >= maxAttempts) {
+					this.stopFocusProtection()
+					return
+				}
+				
+				// Only restore focus if it was stolen and input is still empty
+				if (document.activeElement !== this.input && 
+					this.input.contentEditable === 'true' && 
+					!this.input.innerHTML) {
+					this.focusBeingRestored = true
+					this.input.focus()
+				} else if (this.input.innerHTML) {
+					// Stop protection once user starts typing
+					this.stopFocusProtection()
+				}
+			}, 300)
 		}
 
 		this.stopFocusProtection = () => {
@@ -1029,9 +1023,7 @@ class Intention extends HTMLElement {
 
 		// Enable editing of the intention
 		this.input.contentEditable = true
-		this.shouldMaintainFocus = true
 		this.input.focus()
-		this.startFocusProtection()
 		
 		// Select all text for easy replacement
 		if (this.input.innerHTML) {
@@ -1064,12 +1056,10 @@ class Intention extends HTMLElement {
 		// Reset timer selection to full view
 		this.showFullTimerSelection()
 
-		// Reset the intention input with focus protection
+		// Reset the intention input
 		this.input.innerHTML = ''
 		this.input.contentEditable = true
-		this.shouldMaintainFocus = true
 		this.input.focus()
-		this.startFocusProtection()
 	}
 
 	connectedCallback() {
@@ -1103,9 +1093,12 @@ class Intention extends HTMLElement {
 			}
 		} else {
 			this.input.contentEditable = true
-			this.shouldMaintainFocus = true
 			this.input.focus()
-			this.startFocusProtection()
+			
+			// Only protect focus on LinkedIn during initial load
+			if (window.location.hostname.includes('linkedin.com')) {
+				this.startLinkedInFocusProtection()
+			}
 		}
 	}
 
