@@ -517,10 +517,14 @@ template.innerHTML = /*html*/ `
 		}
 
 		/* 
-		* On drag
+		* On drag - Override important declarations for smooth dragging
 		*/
 		.container.is-about-to-drag {
 			cursor: grabbing !important;
+		}
+
+		.container.is-dragging {
+			transform: none !important;
 		}
 
 		.container.is-dragging #input {
@@ -739,9 +743,10 @@ class Intention extends HTMLElement {
 				const relativeY = (100 * absoluteY) / window.innerHeight //-> %
 				vector = { x: relativeX, y: relativeY }
 
-				this.container.style.setProperty('transform', 'none', 'important')
-				this.container.style.setProperty('left', `${vector.x}%`, 'important')
-				this.container.style.setProperty('top', `${vector.y}%`, 'important')
+				// Use fast style assignments during drag (performance optimized)
+				this.container.style.transform = 'none'
+				this.container.style.left = `${vector.x}%`
+				this.container.style.top = `${vector.y}%`
 			}
 		})
 
@@ -1067,9 +1072,10 @@ class Intention extends HTMLElement {
 			const storage = sessionStorage.getItem(`${extensionID}-position`)
 			const pos = JSON.parse(storage)
 			if (pos.x > -1 && pos.y > -1) {
-				this.container.style.setProperty('transform', 'none', 'important')
-				this.container.style.setProperty('left', `${pos.x}%`, 'important')
-				this.container.style.setProperty('top', `${pos.y}%`, 'important')
+				// Use fast style assignments for position restore
+				this.container.style.transform = 'none'
+				this.container.style.left = `${pos.x}%`
+				this.container.style.top = `${pos.y}%`
 			}
 		}
 
