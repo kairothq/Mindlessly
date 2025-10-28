@@ -595,6 +595,10 @@ class Intention extends HTMLElement {
 		this.timerText = this.shadowRoot.getElementById('timerText')
 		this.timerCompleteDialog = this.shadowRoot.getElementById('timerCompleteDialog')
 
+		// Focus persistence for LinkedIn and other aggressive sites
+		this.focusProtection = null
+		this.shouldMaintainFocus = false
+
 		/**
 		 * Handle input events
 		 */
@@ -603,13 +607,24 @@ class Intention extends HTMLElement {
 			this.veil.classList.add('isVisible')
 			this.container.classList.add('is-editing')
 			draggable = false
+			this.shouldMaintainFocus = true
+			this.startFocusProtection()
 		})
 
 		this.input.addEventListener('blur', (e) => {
+			// Don't process blur if it's due to focus protection
+			if (this.focusBeingRestored) {
+				this.focusBeingRestored = false
+				return
+			}
+
 			// trap focus if no intention has been set
 			if (!this.input.innerHTML) {
 				this.input.focus()
 			} else {
+				this.shouldMaintainFocus = false
+				this.stopFocusProtection()
+				
 				sessionStorage.setItem(
 					`${extensionID}-intention`,
 					e.target.innerHTML
@@ -644,6 +659,53 @@ class Intention extends HTMLElement {
 				this.input.blur()
 			}
 		})
+
+		/**
+		 * Focus protection methods for LinkedIn and other aggressive sites
+		 */
+		this.startFocusProtection = () => {
+			// Clear any existing protection
+			this.stopFocusProtection()
+			
+			// LinkedIn-specific: more aggressive focus maintenance
+			if (window.location.hostname.includes('linkedin.com')) {
+				this.focusProtection = setInterval(() => {
+					if (this.shouldMaintainFocus && 
+						document.activeElement !== this.input && 
+						this.input.contentEditable === 'true') {
+						this.focusBeingRestored = true
+						this.input.focus()
+						
+						// Restore cursor to end of content
+						const range = document.createRange()
+						const selection = this.shadowRoot.getSelection()
+						if (this.input.childNodes.length > 0) {
+							range.selectNodeContents(this.input)
+							range.collapse(false)
+							selection.removeAllRanges()
+							selection.addRange(range)
+						}
+					}
+				}, 200) // Check every 200ms for LinkedIn
+			} else {
+				// Other sites: less aggressive checking
+				this.focusProtection = setInterval(() => {
+					if (this.shouldMaintainFocus && 
+						document.activeElement !== this.input && 
+						this.input.contentEditable === 'true') {
+						this.focusBeingRestored = true
+						this.input.focus()
+					}
+				}, 500) // Check every 500ms for other sites
+			}
+		}
+
+		this.stopFocusProtection = () => {
+			if (this.focusProtection) {
+				clearInterval(this.focusProtection)
+				this.focusProtection = null
+			}
+		}
 
 		/**
 		 * Handle timer selection events
@@ -967,7 +1029,9 @@ class Intention extends HTMLElement {
 
 		// Enable editing of the intention
 		this.input.contentEditable = true
+		this.shouldMaintainFocus = true
 		this.input.focus()
+		this.startFocusProtection()
 		
 		// Select all text for easy replacement
 		if (this.input.innerHTML) {
@@ -1000,10 +1064,12 @@ class Intention extends HTMLElement {
 		// Reset timer selection to full view
 		this.showFullTimerSelection()
 
-		// Reset the intention input
+		// Reset the intention input with focus protection
 		this.input.innerHTML = ''
 		this.input.contentEditable = true
+		this.shouldMaintainFocus = true
 		this.input.focus()
+		this.startFocusProtection()
 	}
 
 	connectedCallback() {
@@ -1037,7 +1103,9 @@ class Intention extends HTMLElement {
 			}
 		} else {
 			this.input.contentEditable = true
+			this.shouldMaintainFocus = true
 			this.input.focus()
+			this.startFocusProtection()
 		}
 	}
 
