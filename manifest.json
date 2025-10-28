@@ -2,7 +2,7 @@
 	"name": "Mindlessly",
 	"author": "Divy Kairoth",
 	"manifest_version": 3,
-	"version": "1.0",
+	"version": "1.1",
 	"description": "Stay focused while browsing with mindful intentions and smart timers.",
 	"permissions": ["webNavigation", "storage"],
 	"action": {
