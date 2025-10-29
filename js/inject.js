@@ -517,14 +517,10 @@ template.innerHTML = /*html*/ `
 		}
 
 		/* 
-		* On drag - Override important declarations for smooth dragging
+		* On drag
 		*/
 		.container.is-about-to-drag {
 			cursor: grabbing !important;
-		}
-
-		.container.is-dragging {
-			transform: none !important;
 		}
 
 		.container.is-dragging #input {
@@ -727,7 +723,7 @@ class Intention extends HTMLElement {
 
 				const deltaX = Math.abs(e.clientX - initX)
 				const deltaY = Math.abs(e.clientY - initY)
-				if (deltaX < drag_treshold && deltaY < drag_treshold) {
+				if (deltaX > drag_treshold || deltaY > drag_treshold) {
 					this.container.classList.add('is-dragging')
 				}
 
@@ -743,21 +739,26 @@ class Intention extends HTMLElement {
 				const relativeY = (100 * absoluteY) / window.innerHeight //-> %
 				vector = { x: relativeX, y: relativeY }
 
-				// Use fast style assignments during drag (performance optimized)
-				this.container.style.transform = 'none'
-				this.container.style.left = `${vector.x}%`
-				this.container.style.top = `${vector.y}%`
+				// Force override YouTube important declarations during drag
+				this.container.style.setProperty('transform', 'none', 'important')
+				this.container.style.setProperty('left', `${vector.x}%`, 'important')
+				this.container.style.setProperty('top', `${vector.y}%`, 'important')
 			}
 		})
 
 		document.addEventListener('mouseup', (e) => {
+			if (!isDragging) return
+			
 			const deltaX = Math.abs(e.clientX - initX)
 			const deltaY = Math.abs(e.clientY - initY)
 
 			if (deltaX < drag_treshold && deltaY < drag_treshold) {
-				// Always allow editing intention - clicking on it should reset everything
-				this.resetAndEditIntention()
+				// Small movement = click, only reset intention if not editing
+				if (this.input.contentEditable === 'false') {
+					this.resetAndEditIntention()
+				}
 			} else {
+				// Large movement = drag, save position
 				sessionStorage.setItem(
 					`${extensionID}-position`,
 					JSON.stringify(vector)
@@ -1072,10 +1073,10 @@ class Intention extends HTMLElement {
 			const storage = sessionStorage.getItem(`${extensionID}-position`)
 			const pos = JSON.parse(storage)
 			if (pos.x > -1 && pos.y > -1) {
-				// Use fast style assignments for position restore
-				this.container.style.transform = 'none'
-				this.container.style.left = `${pos.x}%`
-				this.container.style.top = `${pos.y}%`
+				// Use setProperty to override YouTube important declarations
+				this.container.style.setProperty('transform', 'none', 'important')
+				this.container.style.setProperty('left', `${pos.x}%`, 'important')
+				this.container.style.setProperty('top', `${pos.y}%`, 'important')
 			}
 		}
 
