@@ -3,10 +3,121 @@
  * with purpose prompts and smart timer functionality for focused sessions.
  */
 
-import { trackSessionCompletion, shouldRequestFeedback, markFeedbackRequested, saveNPSScore, getNPSCategory } from './utils/feedback.js'
-
 const placeholder = "What's your purpose here?"
 const extensionID = chrome.runtime.id
+
+// Inline feedback utility functions
+const trackSessionCompletion = function() {
+	return new Promise((resolve, reject) => {
+		chrome.storage.local.get(['usageStats'], (data) => {
+			if (chrome.runtime.lastError) {
+				return reject(chrome.runtime.lastError)
+			}
+
+			const stats = data.usageStats || {
+				sessionsCompleted: 0,
+				feedbackRequested: false,
+				feedbackGiven: false,
+				npsScore: null,
+				lastFeedbackRequest: null,
+				installDate: Date.now()
+			}
+
+			stats.sessionsCompleted += 1
+			stats.lastSessionDate = Date.now()
+
+			chrome.storage.local.set({ usageStats: stats }, () => {
+				if (chrome.runtime.lastError) {
+					return reject(chrome.runtime.lastError)
+				}
+				resolve(stats)
+			})
+		})
+	})
+}
+
+const shouldRequestFeedback = function() {
+	return new Promise((resolve, reject) => {
+		chrome.storage.local.get(['usageStats'], (data) => {
+			if (chrome.runtime.lastError) {
+				return reject(chrome.runtime.lastError)
+			}
+
+			const stats = data.usageStats || {
+				sessionsCompleted: 0,
+				feedbackRequested: false,
+				feedbackGiven: false
+			}
+
+			const shouldRequest = (
+				stats.sessionsCompleted >= 3 && 
+				!stats.feedbackGiven && 
+				(!stats.feedbackRequested || stats.sessionsCompleted >= 6)
+			)
+
+			resolve({
+				shouldRequest,
+				sessionCount: stats.sessionsCompleted,
+				stats
+			})
+		})
+	})
+}
+
+const markFeedbackRequested = function() {
+	return new Promise((resolve, reject) => {
+		chrome.storage.local.get(['usageStats'], (data) => {
+			if (chrome.runtime.lastError) {
+				return reject(chrome.runtime.lastError)
+			}
+
+			const stats = data.usageStats || {}
+			stats.feedbackRequested = true
+			stats.lastFeedbackRequest = Date.now()
+
+			chrome.storage.local.set({ usageStats: stats }, () => {
+				if (chrome.runtime.lastError) {
+					return reject(chrome.runtime.lastError)
+				}
+				resolve(stats)
+			})
+		})
+	})
+}
+
+const saveNPSScore = function(score, category) {
+	return new Promise((resolve, reject) => {
+		if (score < 0 || score > 10) {
+			return reject(new Error('NPS score must be between 0 and 10'))
+		}
+
+		chrome.storage.local.get(['usageStats'], (data) => {
+			if (chrome.runtime.lastError) {
+				return reject(chrome.runtime.lastError)
+			}
+
+			const stats = data.usageStats || {}
+			stats.npsScore = score
+			stats.npsCategory = category
+			stats.feedbackGiven = true
+			stats.npsSubmissionDate = Date.now()
+
+			chrome.storage.local.set({ usageStats: stats }, () => {
+				if (chrome.runtime.lastError) {
+					return reject(chrome.runtime.lastError)
+				}
+				resolve(stats)
+			})
+		})
+	})
+}
+
+const getNPSCategory = function(score) {
+	if (score <= 6) return 'detractor'
+	if (score <= 8) return 'passive'
+	return 'promoter'
+}
+
 const template = document.createElement('template')
 
 template.innerHTML = /*html*/ `
