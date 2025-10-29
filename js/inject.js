@@ -3,6 +3,8 @@
  * with purpose prompts and smart timer functionality for focused sessions.
  */
 
+import { trackSessionCompletion, shouldRequestFeedback, markFeedbackRequested, saveNPSScore, getNPSCategory } from './utils/feedback.js'
+
 const placeholder = "What's your purpose here?"
 const extensionID = chrome.runtime.id
 const template = document.createElement('template')
@@ -382,6 +384,165 @@ template.innerHTML = /*html*/ `
 			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 		}
 
+		/* 
+		* Feedback Dialog
+		*/
+		.feedback-dialog {
+			position: fixed !important;
+			top: 50% !important;
+			left: 50% !important;
+			z-index: 9999996 !important;
+			display: none !important;
+			flex-direction: column !important;
+			gap: 24px !important;
+			padding: 40px !important;
+			background: #fff !important;
+			border-radius: 20px !important;
+			box-shadow: rgba(100, 100, 111, 0.3) 0px 7px 29px 0px !important;
+			transform: translate(-50%, -50%) !important;
+			min-width: 460px !important;
+			max-width: 520px !important;
+			text-align: center !important;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+		}
+
+		.feedback-dialog.visible {
+			display: flex !important;
+		}
+
+		.feedback-dialog h3 {
+			font-size: 28px !important;
+			font-weight: 700 !important;
+			color: #000 !important;
+			margin: 0 0 8px 0 !important;
+			line-height: 1.2 !important;
+		}
+
+		.feedback-dialog .subtitle {
+			font-size: 18px !important;
+			font-weight: 500 !important;
+			color: #666 !important;
+			margin: 0 0 24px 0 !important;
+			line-height: 1.4 !important;
+		}
+
+		.nps-question {
+			font-size: 20px !important;
+			font-weight: 600 !important;
+			color: #333 !important;
+			margin: 0 0 20px 0 !important;
+		}
+
+		.nps-scale {
+			display: flex !important;
+			justify-content: space-between !important;
+			gap: 8px !important;
+			margin-bottom: 16px !important;
+		}
+
+		.nps-button {
+			width: 40px !important;
+			height: 40px !important;
+			border: 2px solid #e0e0e0 !important;
+			border-radius: 8px !important;
+			background: #fff !important;
+			cursor: pointer !important;
+			font-size: 16px !important;
+			font-weight: 600 !important;
+			transition: all 0.2s ease !important;
+			color: #333 !important;
+			display: flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+		}
+
+		.nps-button:hover {
+			border-color: #000 !important;
+			background: #f8f8f8 !important;
+		}
+
+		.nps-button.selected {
+			border-color: #000 !important;
+			background: #000 !important;
+			color: #fff !important;
+		}
+
+		.nps-labels {
+			display: flex !important;
+			justify-content: space-between !important;
+			font-size: 12px !important;
+			color: #666 !important;
+			margin-bottom: 24px !important;
+		}
+
+		.feedback-actions {
+			display: flex !important;
+			gap: 16px !important;
+			justify-content: center !important;
+			flex-wrap: wrap !important;
+		}
+
+		.feedback-btn {
+			padding: 12px 24px !important;
+			border: 2px solid #000 !important;
+			border-radius: 8px !important;
+			cursor: pointer !important;
+			font-size: 16px !important;
+			font-weight: 600 !important;
+			transition: all 0.2s ease !important;
+			text-decoration: none !important;
+			display: inline-flex !important;
+			align-items: center !important;
+			justify-content: center !important;
+			min-width: 120px !important;
+		}
+
+		.feedback-btn.primary {
+			background: #000 !important;
+			color: #fff !important;
+		}
+
+		.feedback-btn.primary:hover {
+			background: #333 !important;
+		}
+
+		.feedback-btn.secondary {
+			background: #fff !important;
+			color: #000 !important;
+		}
+
+		.feedback-btn.secondary:hover {
+			background: #f8f8f8 !important;
+		}
+
+		.feedback-btn:disabled {
+			background: #f5f5f5 !important;
+			color: #999 !important;
+			border-color: #ddd !important;
+			cursor: not-allowed !important;
+		}
+
+		.feedback-thank-you {
+			display: none !important;
+		}
+
+		.feedback-thank-you.visible {
+			display: block !important;
+		}
+
+		.feedback-thank-you h4 {
+			font-size: 24px !important;
+			font-weight: 700 !important;
+			color: #000 !important;
+			margin: 0 0 12px 0 !important;
+		}
+
+		.feedback-thank-you p {
+			font-size: 16px !important;
+			color: #666 !important;
+			margin: 0 0 20px 0 !important;
+		}
+
 		.timer-complete-dialog h3 {
 			font-size: 26px !important;
 			font-weight: 700 !important;
@@ -565,6 +726,48 @@ template.innerHTML = /*html*/ `
 			<button class="dialog-btn primary" id="newTaskBtn">Start a new task</button>
 		</div>
 	</div>
+	<div class="feedback-dialog" id="feedbackDialog">
+		<div class="feedback-content" id="feedbackContent">
+			<h3>🎉 You're on a roll!</h3>
+			<p class="subtitle">You've completed 3 focused sessions with Mindlessly. Your opinion matters to us!</p>
+			
+			<div class="nps-question">How likely are you to recommend Mindlessly to a friend?</div>
+			
+			<div class="nps-scale" id="npsScale">
+				<button class="nps-button" data-score="0">0</button>
+				<button class="nps-button" data-score="1">1</button>
+				<button class="nps-button" data-score="2">2</button>
+				<button class="nps-button" data-score="3">3</button>
+				<button class="nps-button" data-score="4">4</button>
+				<button class="nps-button" data-score="5">5</button>
+				<button class="nps-button" data-score="6">6</button>
+				<button class="nps-button" data-score="7">7</button>
+				<button class="nps-button" data-score="8">8</button>
+				<button class="nps-button" data-score="9">9</button>
+				<button class="nps-button" data-score="10">10</button>
+			</div>
+			
+			<div class="nps-labels">
+				<span>Not likely</span>
+				<span>Extremely likely</span>
+			</div>
+			
+			<div class="feedback-actions">
+				<button class="feedback-btn secondary" id="feedbackSkip">Maybe later</button>
+				<button class="feedback-btn primary" id="feedbackSubmit" disabled>Continue</button>
+			</div>
+		</div>
+		
+		<div class="feedback-thank-you" id="feedbackThankYou">
+			<h4>Thank you! 🙏</h4>
+			<p>Your feedback helps us make Mindlessly better for everyone.</p>
+			<div class="feedback-actions">
+				<a class="feedback-btn secondary" id="feedbackDetailed" href="" target="_blank">Share more thoughts</a>
+				<button class="feedback-btn secondary" id="feedbackContact">Get support</button>
+				<button class="feedback-btn primary" id="feedbackClose">Continue browsing</button>
+			</div>
+		</div>
+	</div>
 `
 
 /**
@@ -594,6 +797,9 @@ class Intention extends HTMLElement {
 		this.timerCircle = this.shadowRoot.getElementById('timerCircle')
 		this.timerText = this.shadowRoot.getElementById('timerText')
 		this.timerCompleteDialog = this.shadowRoot.getElementById('timerCompleteDialog')
+		this.feedbackDialog = this.shadowRoot.getElementById('feedbackDialog')
+		this.feedbackContent = this.shadowRoot.getElementById('feedbackContent')
+		this.feedbackThankYou = this.shadowRoot.getElementById('feedbackThankYou')
 
 		// Focus persistence only for initial LinkedIn loading
 		this.focusProtection = null
@@ -705,6 +911,11 @@ class Intention extends HTMLElement {
 		 * Handle timer selection events
 		 */
 		this.setupTimerEvents()
+
+		/**
+		 * Handle feedback events
+		 */
+		this.setupFeedbackEvents()
 
 		/**
 		 * Handle drag events
@@ -823,6 +1034,119 @@ class Intention extends HTMLElement {
 		extendBtn.addEventListener('click', () => {
 			this.extendTimer(5)
 		})
+	}
+
+	setupFeedbackEvents() {
+		const npsButtons = this.shadowRoot.querySelectorAll('.nps-button')
+		const feedbackSubmit = this.shadowRoot.getElementById('feedbackSubmit')
+		const feedbackSkip = this.shadowRoot.getElementById('feedbackSkip')
+		const feedbackDetailed = this.shadowRoot.getElementById('feedbackDetailed')
+		const feedbackContact = this.shadowRoot.getElementById('feedbackContact')
+		const feedbackClose = this.shadowRoot.getElementById('feedbackClose')
+
+		let selectedNPS = null
+
+		// NPS button selection
+		npsButtons.forEach(btn => {
+			btn.addEventListener('click', () => {
+				npsButtons.forEach(b => b.classList.remove('selected'))
+				btn.classList.add('selected')
+				selectedNPS = parseInt(btn.dataset.score)
+				feedbackSubmit.disabled = false
+			})
+		})
+
+		// Submit NPS score
+		feedbackSubmit.addEventListener('click', () => {
+			if (selectedNPS !== null) {
+				const category = getNPSCategory(selectedNPS)
+				saveNPSScore(selectedNPS, category).then(() => {
+					this.showFeedbackThankYou(selectedNPS, category)
+				}).catch(err => {
+					console.error('Failed to save NPS score:', err)
+				})
+			}
+		})
+
+		// Skip feedback
+		feedbackSkip.addEventListener('click', () => {
+			markFeedbackRequested().then(() => {
+				this.hideFeedbackDialog()
+			})
+		})
+
+		// Contact support
+		feedbackContact.addEventListener('click', () => {
+			// Open email client with pre-filled support email
+			const subject = encodeURIComponent('Mindlessly Support Request')
+			const body = encodeURIComponent('Hi there!\n\nI need help with Mindlessly extension.\n\nIssue: \n\nThanks!')
+			window.open(`mailto:divykairoth@gmail.com?subject=${subject}&body=${body}`, '_blank')
+		})
+
+		// Close feedback dialog
+		feedbackClose.addEventListener('click', () => {
+			this.hideFeedbackDialog()
+		})
+	}
+
+	showFeedbackDialog() {
+		this.feedbackDialog.classList.add('visible')
+		this.veil.classList.add('isVisible')
+		
+		// Reset to initial state
+		this.feedbackContent.style.display = 'block'
+		this.feedbackThankYou.classList.remove('visible')
+		
+		// Reset NPS selection
+		const npsButtons = this.shadowRoot.querySelectorAll('.nps-button')
+		npsButtons.forEach(btn => btn.classList.remove('selected'))
+		this.shadowRoot.getElementById('feedbackSubmit').disabled = true
+	}
+
+	hideFeedbackDialog() {
+		this.feedbackDialog.classList.remove('visible')
+		this.veil.classList.remove('isVisible')
+	}
+
+	showFeedbackThankYou(npsScore, category) {
+		this.feedbackContent.style.display = 'none'
+		this.feedbackThankYou.classList.add('visible')
+		
+		// Set up detailed feedback link based on NPS category
+		const detailedLink = this.shadowRoot.getElementById('feedbackDetailed')
+		let formUrl = ''
+		
+		if (category === 'promoter') {
+			// High scores - ask for testimonials and feature requests
+			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea0802b94d8d3714a0b9ac4?pvs=105'
+			detailedLink.textContent = 'Share what you love'
+		} else if (category === 'passive') {
+			// Mid scores - ask for improvement suggestions
+			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea081de9b18c359fd050c4a?pvs=105'
+			detailedLink.textContent = 'Help us improve'
+		} else {
+			// Low scores - ask for specific issues
+			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea081cca33cdf72103619b1?pvs=105'
+			detailedLink.textContent = 'Tell us what\'s wrong'
+		}
+		
+		detailedLink.href = formUrl
+	}
+
+	async checkAndShowFeedback() {
+		try {
+			const { shouldRequest, sessionCount } = await shouldRequestFeedback()
+			
+			if (shouldRequest) {
+				// Show feedback dialog after a short delay
+				setTimeout(() => {
+					this.showFeedbackDialog()
+					markFeedbackRequested()
+				}, 2000) // 2 second delay after session completion
+			}
+		} catch (error) {
+			console.error('Error checking feedback eligibility:', error)
+		}
 	}
 
 	showTimerSelection() {
@@ -1042,6 +1366,14 @@ class Intention extends HTMLElement {
 	}
 
 	finishSession() {
+		// Track session completion for feedback system
+		trackSessionCompletion().then(() => {
+			// Check if we should show feedback after tracking
+			this.checkAndShowFeedback()
+		}).catch(err => {
+			console.error('Failed to track session completion:', err)
+		})
+
 		// Clear all timer data
 		if (this.timerInterval) {
 			clearInterval(this.timerInterval)
