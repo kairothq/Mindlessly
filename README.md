@@ -15,6 +15,9 @@ A Chrome extension that transforms mindless browsing into mindful, productive se
 ## 🚀 Installation
 
 ### From Source (Developer Mode)
+
+Simple language -> Open terminal, put this code below, then open browser, open extensions, turn on developer mode toggle, install package (present of user with name "Mindlessly")
+
 1. Clone this repository:
    ```bash
    git clone https://github.com/kairothq/Mindlessly.git
