@@ -819,6 +819,7 @@ template.innerHTML = /*html*/ `
 	<div class="timer-selection" id="timerSelection">
 		<h3 style="margin: 0; font-size: 16px;">Choose timer duration:</h3>
 		<div class="timer-options">
+			<div class="timer-btn" data-minutes="no-timer">No timer</div>
 			<div class="timer-btn" data-minutes="1">1 min</div>
 			<div class="timer-btn" data-minutes="10">10 min</div>
 			<div class="timer-btn" data-minutes="custom">Custom</div>
@@ -896,6 +897,7 @@ class Intention extends HTMLElement {
 		// Timer properties as instance variables
 		this.timerInterval = null
 		this.currentTimer = null
+		this.timerCompleted = false // Track if timer completion dialog has been shown
 
 		const drag_treshold = 6 // px
 		const shadowRoot = this.attachShadow({ mode: 'open' })
@@ -1111,12 +1113,18 @@ class Intention extends HTMLElement {
 				btn.classList.add('selected')
 
 				const minutes = btn.dataset.minutes
-				if (minutes === 'custom') {
+				if (minutes === 'no-timer') {
+					customTimer.classList.remove('visible')
+					selectedMinutes = 'no-timer'
+					startTimerBtn.textContent = 'Continue without timer'
+				} else if (minutes === 'custom') {
 					customTimer.classList.add('visible')
 					selectedMinutes = parseInt(customMinutes.value)
+					startTimerBtn.textContent = 'Start Timer'
 				} else {
 					customTimer.classList.remove('visible')
 					selectedMinutes = parseInt(minutes)
+					startTimerBtn.textContent = 'Start Timer'
 				}
 				startTimerBtn.disabled = false
 				
@@ -1132,7 +1140,9 @@ class Intention extends HTMLElement {
 
 		// Start timer button
 		startTimerBtn.addEventListener('click', () => {
-			if (selectedMinutes && selectedMinutes > 0) {
+			if (selectedMinutes === 'no-timer') {
+				this.startInfiniteSession()
+			} else if (selectedMinutes && selectedMinutes > 0) {
 				this.startTimer(selectedMinutes)
 			}
 		})
@@ -1321,6 +1331,9 @@ class Intention extends HTMLElement {
 			selectedButtonText: this.selectedTimerButton ? this.selectedTimerButton.textContent : null
 		}
 
+		// Reset completion flag for new timer
+		this.timerCompleted = false
+
 		// Save timer state
 		sessionStorage.setItem(`${extensionID}-timer`, JSON.stringify(this.currentTimer))
 
@@ -1334,7 +1347,51 @@ class Intention extends HTMLElement {
 		}, 1000)
 	}
 
+	startInfiniteSession() {
+		// Clear any existing timer
+		if (this.timerInterval) {
+			clearInterval(this.timerInterval)
+			this.timerInterval = null
+		}
+
+		// Set infinite session state
+		this.currentTimer = {
+			active: true,
+			infinite: true,
+			startTime: Date.now(),
+			selectedButtonText: this.selectedTimerButton ? this.selectedTimerButton.textContent : null
+		}
+
+		// Reset completion flag
+		this.timerCompleted = false
+
+		// Save timer state
+		sessionStorage.setItem(`${extensionID}-timer`, JSON.stringify(this.currentTimer))
+
+		this.hideTimerSelection()
+		// Don't show timer circle for infinite sessions
+		// this.showTimerCircle()
+	}
+
 	resumeTimer(timer) {
+		// Handle infinite sessions
+		if (timer.infinite) {
+			this.currentTimer = timer
+			
+			// Restore the selected button based on saved text
+			if (timer.selectedButtonText) {
+				const timerBtns = this.shadowRoot.querySelectorAll('.timer-btn')
+				timerBtns.forEach(btn => {
+					if (btn.textContent === timer.selectedButtonText) {
+						this.selectedTimerButton = btn
+					}
+				})
+			}
+			
+			// Don't show timer circle for infinite sessions
+			return
+		}
+
 		const now = Date.now()
 		if (now >= timer.endTime) {
 			this.timerComplete()
@@ -1381,11 +1438,15 @@ class Intention extends HTMLElement {
 	updateTimerDisplay() {
 		if (!this.currentTimer) return
 
+		// Skip display updates for infinite sessions
+		if (this.currentTimer.infinite) return
+
 		const now = Date.now()
 		const remaining = Math.max(0, this.currentTimer.endTime - now)
 		const remainingSeconds = Math.ceil(remaining / 1000)
 
-		if (remainingSeconds <= 0) {
+		if (remainingSeconds <= 0 && !this.timerCompleted) {
+			this.timerCompleted = true
 			this.timerComplete()
 			return
 		}
@@ -1431,6 +1492,9 @@ class Intention extends HTMLElement {
 			sessionStorage.setItem(`${extensionID}-timer`, JSON.stringify(this.currentTimer))
 		}
 
+		// Reset completion flag since timer is extended
+		this.timerCompleted = false
+
 		this.timerCompleteDialog.classList.remove('visible')
 		this.veil.classList.remove('isVisible')
 
@@ -1451,6 +1515,7 @@ class Intention extends HTMLElement {
 
 		this.currentTimer = null
 		this.selectedTimerButton = null
+		this.timerCompleted = false
 		sessionStorage.removeItem(`${extensionID}-timer`)
 
 		// Hide timer UI elements
@@ -1493,6 +1558,7 @@ class Intention extends HTMLElement {
 
 		this.currentTimer = null
 		this.selectedTimerButton = null
+		this.timerCompleted = false
 		sessionStorage.removeItem(`${extensionID}-timer`)
 		sessionStorage.removeItem(`${extensionID}-intention`)
 
