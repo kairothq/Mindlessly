@@ -1,0 +1,34 @@
+/**
+ * @file Stylesheet for tab bar popup
+ */
+
+@import url('base.css');
+
+.popup {
+	padding: 24px;
+	background: var(--color-foreground);
+}
+
+.action-prohibited,
+.add-website,
+.remove-website {
+	display: none;
+}
+
+.action-prohibited.is-visible,
+.add-website.is-visible,
+.remove-website.is-visible {
+	display: inline-block;
+	white-space: nowrap;
+}
+
+.add-website button,
+.remove-website button {
+	margin: 8px 0;
+}
+
+.remove-website button {
+	width: 100%;
+	color: var(--color-text-primary);
+	background: var(--color-highlight);
+}
