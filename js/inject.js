@@ -1633,7 +1633,7 @@ class Intention extends HTMLElement {
 
 customElements.define('intention-container', Intention)
 
-// YouTube-specific initialization
+// YouTube-specific and GitHub-specific initialization
 function initializeExtension() {
 	// Remove any existing containers to prevent duplicates
 	const existingContainers = document.querySelectorAll('intention-container')
@@ -1642,8 +1642,31 @@ function initializeExtension() {
 	// Create and inject new container
 	const container = document.createElement('intention-container')
 	
-	// YouTube-specific insertion method
-	if (window.location.hostname.includes('youtube.com')) {
+	// GitHub-specific handling to prevent Turbo navigation conflicts
+	if (window.location.hostname.includes('github.com')) {
+		// GitHub uses Turbo for SPA navigation - handle it gracefully
+		const insertContainer = () => {
+			const body = document.body || document.documentElement
+			if (body && !document.body.contains(container)) {
+				body.appendChild(container)
+			}
+		}
+		
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', insertContainer)
+		} else {
+			insertContainer()
+		}
+		
+		// Listen for Turbo navigation events to prevent re-injection issues
+		document.addEventListener('turbo:load', () => {
+			// Don't re-inject, just ensure existing container stays
+			if (!document.body.contains(container)) {
+				document.body.appendChild(container)
+			}
+		})
+		
+	} else if (window.location.hostname.includes('youtube.com')) {
 		// Wait for YouTube to finish loading and use a more stable insertion point
 		const insertContainer = () => {
 			const body = document.body || document.documentElement
