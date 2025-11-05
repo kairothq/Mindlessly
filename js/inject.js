@@ -49,11 +49,11 @@ const shouldRequestFeedback = function() {
 				feedbackGiven: false
 			}
 
-			const shouldRequest = (
-				stats.sessionsCompleted >= 3 && 
-				!stats.feedbackGiven && 
-				(!stats.feedbackRequested || stats.sessionsCompleted >= 6)
-			)
+		const shouldRequest = (
+			stats.sessionsCompleted >= 2 && 
+			!stats.feedbackGiven && 
+			(!stats.feedbackRequested || stats.sessionsCompleted >= 4)
+		)
 
 			resolve({
 				shouldRequest,
@@ -841,7 +841,7 @@ template.innerHTML = /*html*/ `
 	<div class="feedback-dialog" id="feedbackDialog">
 		<div class="feedback-content" id="feedbackContent">
 			<h3>🎉 You're on a roll!</h3>
-			<p class="subtitle">You've completed 3 focused sessions with Mindlessly. Your opinion matters to us!</p>
+			<p class="subtitle">You've completed 2 focused sessions with Mindlessly. Your opinion matters to us!</p>
 			
 			<div class="nps-question">How likely are you to recommend Mindlessly to a friend?</div>
 			
