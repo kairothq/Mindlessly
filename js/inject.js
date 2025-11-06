@@ -49,10 +49,14 @@ const shouldRequestFeedback = function() {
 				feedbackGiven: false
 			}
 
+		// Progressive feedback schedule: 2, 5, 12, 30, 70, 100 sessions
+		const feedbackSchedule = [2, 5, 12, 30, 70, 100]
+		const feedbackAttempts = stats.feedbackAttempts || 0
+		const nextFeedbackAt = feedbackSchedule[feedbackAttempts] || 100
+		
 		const shouldRequest = (
-			stats.sessionsCompleted >= 2 && 
-			!stats.feedbackGiven && 
-			(!stats.feedbackRequested || stats.sessionsCompleted >= 4)
+			stats.sessionsCompleted >= nextFeedbackAt && 
+			!stats.feedbackGiven
 		)
 
 			resolve({
@@ -73,7 +77,59 @@ const markFeedbackRequested = function() {
 
 			const stats = data.usageStats || {}
 			stats.feedbackRequested = true
+			stats.feedbackAttempts = (stats.feedbackAttempts || 0) + 1
 			stats.lastFeedbackRequest = Date.now()
+
+			chrome.storage.local.set({ usageStats: stats }, () => {
+				if (chrome.runtime.lastError) {
+					return reject(chrome.runtime.lastError)
+				}
+				resolve(stats)
+			})
+		})
+	})
+}
+
+// Milestone celebration system
+const checkMilestoneReached = function() {
+	return new Promise((resolve, reject) => {
+		chrome.storage.local.get(['usageStats'], (data) => {
+			if (chrome.runtime.lastError) {
+				return reject(chrome.runtime.lastError)
+			}
+
+			const stats = data.usageStats || { sessionsCompleted: 0, celebratedMilestones: [] }
+			const milestones = [3, 7, 15, 30, 50, 100]
+			const celebrated = stats.celebratedMilestones || []
+			
+			// Find if we've hit a new milestone
+			const newMilestone = milestones.find(m => 
+				stats.sessionsCompleted >= m && !celebrated.includes(m)
+			)
+			
+			resolve({
+				milestone: newMilestone,
+				sessionCount: stats.sessionsCompleted
+			})
+		})
+	})
+}
+
+const markMilestoneCelebrated = function(milestone) {
+	return new Promise((resolve, reject) => {
+		chrome.storage.local.get(['usageStats'], (data) => {
+			if (chrome.runtime.lastError) {
+				return reject(chrome.runtime.lastError)
+			}
+
+			const stats = data.usageStats || { celebratedMilestones: [] }
+			if (!stats.celebratedMilestones) {
+				stats.celebratedMilestones = []
+			}
+			
+			if (!stats.celebratedMilestones.includes(milestone)) {
+				stats.celebratedMilestones.push(milestone)
+			}
 
 			chrome.storage.local.set({ usageStats: stats }, () => {
 				if (chrome.runtime.lastError) {
@@ -96,18 +152,22 @@ const saveNPSScore = function(score, category) {
 				return reject(chrome.runtime.lastError)
 			}
 
-			const stats = data.usageStats || {}
-			stats.npsScore = score
-			stats.npsCategory = category
-			stats.feedbackGiven = true
-			stats.npsSubmissionDate = Date.now()
+		const stats = data.usageStats || {}
+		stats.npsScore = score
+		stats.npsCategory = category
+		stats.feedbackGiven = true
+		stats.npsSubmissionDate = Date.now()
 
-			chrome.storage.local.set({ usageStats: stats }, () => {
-				if (chrome.runtime.lastError) {
-					return reject(chrome.runtime.lastError)
-				}
-				resolve(stats)
-			})
+		chrome.storage.local.set({ usageStats: stats }, () => {
+			if (chrome.runtime.lastError) {
+				return reject(chrome.runtime.lastError)
+			}
+			
+			// Send to Google Forms automatically (non-blocking, secure)
+			sendNPSToGoogleForms(score, category, stats)
+			
+			resolve(stats)
+		})
 		})
 	})
 }
@@ -116,6 +176,38 @@ const getNPSCategory = function(score) {
 	if (score <= 6) return 'detractor'
 	if (score <= 8) return 'passive'
 	return 'promoter'
+}
+
+// Send NPS to Google Forms (SECURE - No API tokens exposed!)
+const sendNPSToGoogleForms = async function(score, category, stats) {
+	try {
+		// Your Google Form URL - automatically configured!
+		const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfeBF81ooQmiuH1cBwiXFNiiQa85zdfN3L50H7Hy9UqTIZ0gA/formResponse'
+		
+		// Field IDs from your Google Form
+		const FIELD_NPS_SCORE = 'entry.180041235'   // NPS Score
+		const FIELD_CATEGORY = 'entry.727464252'    // Category (promoter/passive/detractor)
+		const FIELD_SESSIONS = 'entry.850259990'    // Sessions Completed
+		const FIELD_TIMESTAMP = 'entry.206546176'   // Timestamp
+		
+		// Build form data
+		const formData = new FormData()
+		formData.append(FIELD_NPS_SCORE, score)
+		formData.append(FIELD_CATEGORY, category)
+		formData.append(FIELD_SESSIONS, stats.sessionsCompleted || 0)
+		formData.append(FIELD_TIMESTAMP, new Date(stats.npsSubmissionDate).toISOString())
+		
+		// Send to Google Forms (no-cors mode - fire and forget)
+		await fetch(GOOGLE_FORM_URL, {
+			method: 'POST',
+			body: formData,
+			mode: 'no-cors' // Required for Google Forms
+		})
+		
+		console.log('✅ NPS sent to Google Forms successfully!')
+	} catch (err) {
+		console.error('❌ Failed to send NPS to Google Forms:', err)
+	}
 }
 
 const template = document.createElement('template')
@@ -249,13 +341,14 @@ template.innerHTML = /*html*/ `
 			display: flex;
 			align-items: center;
 			height: 100%;
-			padding: 0px 32px;
-			color: lightgray;
+			padding: 0px 48px;
+			color: #333;
 			white-space: nowrap;
 			opacity: 1;
-			content: '↵ Enter';
+			content: '→ Press Tab';
 			pointer-events: none;
 			transition: opacity .3s;
+			font-weight: 500;
 		}
 
 		#input:empty::after {
@@ -339,6 +432,7 @@ template.innerHTML = /*html*/ `
 			opacity: 1 !important;
 			visibility: visible !important;
 			outline: none;
+			box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
 		}
 
 		.timer-btn.selected {
@@ -422,6 +516,13 @@ template.innerHTML = /*html*/ `
 		.start-timer-btn:hover {
 			background: #333;
 			border-color: #333;
+		}
+		
+		.start-timer-btn:focus {
+			outline: none;
+			background: #333;
+			border-color: #333;
+			box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2);
 		}
 
 		.start-timer-btn:disabled {
@@ -626,6 +727,17 @@ template.innerHTML = /*html*/ `
 			background: #f8f8f8 !important;
 		}
 
+		#feedbackDetailed {
+			background: #ff6b35 !important;
+			color: white !important;
+			border: 2px solid #ff6b35 !important;
+		}
+
+		#feedbackDetailed:hover {
+			background: #ff5722 !important;
+			border-color: #ff5722 !important;
+		}
+
 		.feedback-btn:disabled {
 			background: #f5f5f5 !important;
 			color: #999 !important;
@@ -652,6 +764,153 @@ template.innerHTML = /*html*/ `
 			font-size: 16px !important;
 			color: #666 !important;
 			margin: 0 0 20px 0 !important;
+		}
+
+		/*
+		* Celebration Dialog & Confetti
+		*/
+		.celebration-dialog {
+			display: none !important;
+			position: fixed !important;
+			top: 50% !important;
+			left: 50% !important;
+			transform: translate(-50%, -50%) !important;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+			color: white !important;
+			padding: 40px !important;
+			border-radius: 20px !important;
+			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+			z-index: 2147483647 !important;
+			max-width: 450px !important;
+			width: 90% !important;
+			text-align: center !important;
+			animation: celebrationPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+		}
+
+		@keyframes celebrationPop {
+			0% {
+				transform: translate(-50%, -50%) scale(0.3);
+				opacity: 0;
+			}
+			100% {
+				transform: translate(-50%, -50%) scale(1);
+				opacity: 1;
+			}
+		}
+
+		.celebration-dialog.visible {
+			display: block !important;
+		}
+
+		.celebration-content {
+			position: relative !important;
+		}
+
+		.celebration-icon {
+			font-size: 72px !important;
+			margin-bottom: 20px !important;
+			animation: celebrationBounce 1s ease-in-out infinite !important;
+		}
+
+		@keyframes celebrationBounce {
+			0%, 100% { transform: translateY(0px); }
+			50% { transform: translateY(-10px); }
+		}
+
+		#celebrationTitle {
+			font-size: 32px !important;
+			font-weight: 700 !important;
+			color: white !important;
+			margin: 0 0 15px 0 !important;
+			text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+		}
+
+		.celebration-message {
+			font-size: 22px !important;
+			font-weight: 600 !important;
+			color: white !important;
+			margin: 10px 0 !important;
+		}
+
+		.celebration-subtitle {
+			font-size: 16px !important;
+			color: rgba(255, 255, 255, 0.9) !important;
+			margin: 10px 0 30px 0 !important;
+		}
+
+		.celebration-actions {
+			display: flex !important;
+			gap: 12px !important;
+			justify-content: center !important;
+			flex-wrap: wrap !important;
+		}
+
+		.celebration-btn {
+			padding: 14px 28px !important;
+			border-radius: 12px !important;
+			border: none !important;
+			font-size: 16px !important;
+			font-weight: 600 !important;
+			cursor: pointer !important;
+			transition: all 0.3s ease !important;
+			text-decoration: none !important;
+			display: inline-block !important;
+		}
+
+		.celebration-btn.primary {
+			background: #ff6b35 !important;
+			color: white !important;
+			box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4) !important;
+			animation: celebrationGlow 2s ease-in-out infinite !important;
+		}
+
+		@keyframes celebrationGlow {
+			0%, 100% { box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4); }
+			50% { box-shadow: 0 4px 25px rgba(255, 107, 53, 0.8); }
+		}
+
+		.celebration-btn.primary:hover {
+			background: #ff5722 !important;
+			transform: translateY(-2px) !important;
+			box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6) !important;
+		}
+
+		.celebration-btn.secondary {
+			background: rgba(255, 255, 255, 0.2) !important;
+			color: white !important;
+			backdrop-filter: blur(10px) !important;
+		}
+
+		.celebration-btn.secondary:hover {
+			background: rgba(255, 255, 255, 0.3) !important;
+			transform: translateY(-2px) !important;
+		}
+
+		/* Confetti Animation */
+		.confetti-container {
+			position: fixed !important;
+			top: 0 !important;
+			left: 0 !important;
+			width: 100% !important;
+			height: 100% !important;
+			pointer-events: none !important;
+			z-index: 2147483646 !important;
+			overflow: hidden !important;
+		}
+
+		.confetti {
+			position: absolute !important;
+			width: 10px !important;
+			height: 10px !important;
+			background: #f0f !important;
+			animation: confettiFall 3s linear forwards !important;
+		}
+
+		@keyframes confettiFall {
+			to {
+				transform: translateY(100vh) rotate(360deg);
+				opacity: 0;
+			}
 		}
 
 		.timer-complete-dialog h3 {
@@ -701,83 +960,34 @@ template.innerHTML = /*html*/ `
 		}
 
 		.dialog-btn.primary {
-			background: var(--color-accent) !important;
-			color: white !important;
-			border-color: var(--color-accent) !important;
+			background: #000 !important;
+			color: #fff !important;
+			border-color: #000 !important;
 			font-weight: 700 !important;
 			opacity: 1 !important;
 			visibility: visible !important;
 			display: inline-block !important;
 		}
 
+		.dialog-btn.primary:hover {
+			background: #333 !important;
+		}
+
 		.dialog-btn.secondary {
-			background: white !important;
-			color: var(--color-accent) !important;
-			border-color: var(--color-accent) !important;
+			background: #000 !important;
+			color: #fff !important;
+			border-color: #000 !important;
 			border-width: 2px !important;
 			font-weight: 600 !important;
 			opacity: 1 !important;
 			visibility: visible !important;
 			display: inline-block !important;
 		}
-		
-		/* DEBUG: Force both buttons to be visible */
-		#extendBtn {
-			background: white !important;
-			color: var(--color-accent) !important;
-			border: 2px solid var(--color-accent) !important;
-			display: inline-block !important;
-			opacity: 1 !important;
-			visibility: visible !important;
-			position: static !important;
-			transition: all 0.2s ease, border-width 0.15s ease, transform 0.1s ease !important;
-		}
-		
-		#extendBtn:hover {
-			border-color: #000 !important;
-			border-width: 3px !important;
-			background: #f8f8f8 !important;
-		}
-		
-		#extendBtn:active,
-		#extendBtn:focus {
-			border: 4px solid #000 !important;
-			background: #f0f0f0 !important;
-		}
-		
-		#newTaskBtn {
-			background: white !important;
-			color: var(--color-accent) !important;
-			border: 2px solid var(--color-accent) !important;
-			display: inline-block !important;
-			opacity: 1 !important;
-			visibility: visible !important;
-			position: static !important;
-			transition: all 0.2s ease, border-width 0.15s ease, transform 0.1s ease !important;
-		}
-		
-		#newTaskBtn:hover {
-			border-color: #000 !important;
-			border-width: 3px !important;
-			background: #f8f8f8 !important;
-		}
-		
-		#newTaskBtn:active,
-		#newTaskBtn:focus {
-			border: 4px solid #000 !important;
-			background: #f0f0f0 !important;
+
+		.dialog-btn.secondary:hover {
+			background: #333 !important;
 		}
 
-		.dialog-btn:hover {
-			border-color: #000 !important;
-			border-width: 3px !important;
-			opacity: 1 !important;
-			visibility: visible !important;
-			display: inline-block !important;
-			transform: translateY(-1px);
-			transition: all 0.2s ease;
-		}
-		
 		.dialog-btn:active,
 		.dialog-btn:focus {
 			border: 4px solid #000 !important;
@@ -880,6 +1090,20 @@ template.innerHTML = /*html*/ `
 			</div>
 		</div>
 	</div>
+	<div class="celebration-dialog" id="celebrationDialog">
+		<div class="celebration-content" id="celebrationContent">
+			<div class="celebration-icon" id="celebrationIcon"></div>
+			<h3 id="celebrationTitle">🎯 Milestone Reached!</h3>
+			<p class="celebration-message" id="celebrationMessage">You've completed 3 focused sessions!</p>
+			<p class="celebration-subtitle" id="celebrationSubtitle">You're building a mindful habit!</p>
+			
+			<div class="celebration-actions">
+				<a class="celebration-btn primary" id="celebrationShare" href="" target="_blank">aao baate kre 💬</a>
+				<button class="celebration-btn secondary" id="celebrationContinue">Continue ✨</button>
+			</div>
+		</div>
+	</div>
+	<div class="confetti-container" id="confettiContainer"></div>
 `
 
 /**
@@ -913,6 +1137,10 @@ class Intention extends HTMLElement {
 		this.feedbackDialog = this.shadowRoot.getElementById('feedbackDialog')
 		this.feedbackContent = this.shadowRoot.getElementById('feedbackContent')
 		this.feedbackThankYou = this.shadowRoot.getElementById('feedbackThankYou')
+		
+		// Celebration dialog elements
+		this.celebrationDialog = this.shadowRoot.getElementById('celebrationDialog')
+		this.confettiContainer = this.shadowRoot.getElementById('confettiContainer')
 
 		// Focus persistence only for initial LinkedIn loading
 		this.focusProtection = null
@@ -975,8 +1203,10 @@ class Intention extends HTMLElement {
 			if (e.key === ' ' || e.key === 'Spacebar') {
 				e.preventDefault()
 				this.insertAtCursor('&nbsp;')
-			} else if (e.key === 'Enter') {
+			} else if (e.key === 'Enter' || e.key === 'Tab') {
 				e.preventDefault()
+				e.stopPropagation()
+				e.stopImmediatePropagation()
 				// Stop focus protection to allow normal flow
 				this.stopFocusProtection()
 				this.input.blur()
@@ -1029,6 +1259,11 @@ class Intention extends HTMLElement {
 		 * Handle feedback events
 		 */
 		this.setupFeedbackEvents()
+
+		/**
+		 * Install keyboard firewall - extension acts as separate app
+		 */
+		this.setupKeyboardFirewall()
 
 		/**
 		 * Handle drag events
@@ -1107,6 +1342,9 @@ class Intention extends HTMLElement {
 
 		// Timer option selection
 		timerBtns.forEach(btn => {
+			// Make buttons focusable
+			btn.setAttribute('tabindex', '0')
+			
 			btn.addEventListener('click', () => {
 				// Remove previous selections
 				timerBtns.forEach(b => b.classList.remove('selected'))
@@ -1131,6 +1369,16 @@ class Intention extends HTMLElement {
 				// Store selected button for keeping it visible during timer
 				this.selectedTimerButton = btn
 			})
+			
+			// Add keyboard support for Enter key on timer buttons
+			btn.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault()
+					btn.click()
+					// Focus the start button after selection
+					setTimeout(() => startTimerBtn.focus(), 50)
+				}
+			})
 		})
 
 		// Custom timer input
@@ -1144,6 +1392,14 @@ class Intention extends HTMLElement {
 				this.startInfiniteSession()
 			} else if (selectedMinutes && selectedMinutes > 0) {
 				this.startTimer(selectedMinutes)
+			}
+		})
+		
+		// Add keyboard support for Enter key on start button
+		startTimerBtn.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' && !startTimerBtn.disabled) {
+				e.preventDefault()
+				startTimerBtn.click()
 			}
 		})
 
@@ -1198,15 +1454,26 @@ class Intention extends HTMLElement {
 
 		// Contact support
 		feedbackContact.addEventListener('click', () => {
-			// Open email client with pre-filled support email
-			const subject = encodeURIComponent('Mindlessly Support Request')
-			const body = encodeURIComponent('Hi there!\n\nI need help with Mindlessly extension.\n\nIssue: \n\nThanks!')
-			window.open(`mailto:divykairoth@gmail.com?subject=${subject}&body=${body}`, '_blank')
+			// Open LinkedIn profile
+			window.open('https://www.linkedin.com/in/divy-kairoth/', '_blank')
 		})
 
 		// Close feedback dialog
 		feedbackClose.addEventListener('click', () => {
 			this.hideFeedbackDialog()
+		})
+		
+		// Celebration dialog events
+		const celebrationShare = this.shadowRoot.getElementById('celebrationShare')
+		const celebrationContinue = this.shadowRoot.getElementById('celebrationContinue')
+		
+		celebrationShare.addEventListener('click', () => {
+			// Link will open in new tab via href
+			this.hideCelebrationDialog()
+		})
+		
+		celebrationContinue.addEventListener('click', () => {
+			this.hideCelebrationDialog()
 		})
 	}
 
@@ -1240,11 +1507,11 @@ class Intention extends HTMLElement {
 		if (category === 'promoter') {
 			// High scores - ask for testimonials and feature requests
 			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea0802b94d8d3714a0b9ac4?pvs=105'
-			detailedLink.textContent = 'Share what you love'
+			detailedLink.textContent = 'Idhaar aana jara, kuch baat krni hai'
 		} else if (category === 'passive') {
 			// Mid scores - ask for improvement suggestions
 			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea081de9b18c359fd050c4a?pvs=105'
-			detailedLink.textContent = 'Help us improve'
+			detailedLink.textContent = 'Dare you to click me'
 		} else {
 			// Low scores - ask for specific issues
 			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea081cca33cdf72103619b1?pvs=105'
@@ -1254,9 +1521,221 @@ class Intention extends HTMLElement {
 		detailedLink.href = formUrl
 	}
 
+	createConfetti() {
+		// Create 50 confetti pieces
+		const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7dc6f', '#bb8fce', '#85c1e9', '#76d7c4', '#f8b739']
+		const emojis = ['🎊', '🎉', '⭐', '✨', '🌟', '💫']
+		
+		for (let i = 0; i < 50; i++) {
+			const confetti = document.createElement('div')
+			confetti.className = 'confetti'
+			
+			// Random position
+			confetti.style.left = Math.random() * 100 + '%'
+			confetti.style.top = -10 + 'px'
+			
+			// Random size
+			const size = Math.random() * 8 + 5
+			confetti.style.width = size + 'px'
+			confetti.style.height = size + 'px'
+			
+			// Use emoji or color
+			if (Math.random() > 0.5) {
+				confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)]
+				confetti.style.background = 'transparent'
+				confetti.style.fontSize = size + 8 + 'px'
+			} else {
+				confetti.style.background = colors[Math.floor(Math.random() * colors.length)]
+			}
+			
+			// Random animation delay and duration
+			confetti.style.animationDelay = Math.random() * 0.5 + 's'
+			confetti.style.animationDuration = Math.random() * 2 + 2 + 's'
+			
+			// Random rotation
+			confetti.style.transform = `rotate(${Math.random() * 360}deg)`
+			
+			this.confettiContainer.appendChild(confetti)
+			
+			// Remove after animation completes
+			setTimeout(() => {
+				confetti.remove()
+			}, 3500)
+		}
+	}
+
+	showCelebrationDialog(milestone) {
+		// Get milestone data
+		const milestoneData = {
+			3: {
+				icon: '🎯',
+				title: 'Great Start!',
+				message: `You've completed ${milestone} focused sessions!`,
+				subtitle: 'You\'re building a mindful habit!',
+				cta: 'aao baate kre 💬'
+			},
+			7: {
+				icon: '🔥',
+				title: 'You\'re on Fire!',
+				message: `${milestone} sessions down!`,
+				subtitle: 'You\'re becoming more focused every day.',
+				cta: 'share karo yaar 💬'
+			},
+			15: {
+				icon: '🧘',
+				title: 'Mindful Master!',
+				message: `${milestone} sessions completed!`,
+				subtitle: 'You\'re mastering the art of intentional browsing.',
+				cta: 'bataao kaisa laga 💬'
+			},
+			30: {
+				icon: '👑',
+				title: 'Consistency King!',
+				message: `${milestone} sessions! You\'re a champion!`,
+				subtitle: 'Your focus is inspiring. Keep it up!',
+				cta: 'feedback dedo boss 💬'
+			},
+			50: {
+				icon: '⭐',
+				title: 'Legend Status!',
+				message: `Half century! ${milestone} focused sessions!`,
+				subtitle: 'You\'re an absolute legend!',
+				cta: 'chal baat krte hain 💬'
+			},
+			100: {
+				icon: '🎊',
+				title: 'CENTURY!',
+				message: `${milestone} SESSIONS! You\'re unstoppable!`,
+				subtitle: 'This calls for a celebration! 🎉',
+				cta: 'idhaar aao, treat banta hai! 🎊'
+			}
+		}
+		
+		const data = milestoneData[milestone] || milestoneData[3]
+		
+		// Update dialog content
+		const icon = this.shadowRoot.getElementById('celebrationIcon')
+		const title = this.shadowRoot.getElementById('celebrationTitle')
+		const message = this.shadowRoot.getElementById('celebrationMessage')
+		const subtitle = this.shadowRoot.getElementById('celebrationSubtitle')
+		const shareBtn = this.shadowRoot.getElementById('celebrationShare')
+		
+		icon.textContent = data.icon
+		title.textContent = data.title
+		message.textContent = data.message
+		subtitle.textContent = data.subtitle
+		shareBtn.textContent = data.cta
+		
+		// Set share button to feedback form
+		shareBtn.href = 'https://divykairoth.notion.site/29b64a8c4ea0802b94d8d3714a0b9ac4?pvs=105'
+		
+		// Show confetti first
+		this.createConfetti()
+		
+		// Show dialog with slight delay for confetti effect
+		setTimeout(() => {
+			this.celebrationDialog.classList.add('visible')
+			this.veil.classList.add('isVisible')
+		}, 200)
+		
+		// Mark milestone as celebrated
+		markMilestoneCelebrated(milestone)
+	}
+
+	hideCelebrationDialog() {
+		this.celebrationDialog.classList.remove('visible')
+		this.veil.classList.remove('isVisible')
+		
+		// Clear confetti
+		this.confettiContainer.innerHTML = ''
+		
+		// Check if we should show feedback after celebrating
+		setTimeout(() => {
+			this.checkAndShowFeedback()
+		}, 300)
+	}
+
+	/**
+	 * Setup keyboard firewall - makes extension act as completely separate app
+	 * Blocks ALL website keyboard events when extension UI is visible
+	 */
+	setupKeyboardFirewall() {
+		// PRIMARY FIREWALL: Block keyboard events from reaching the website
+		// but allow them within our extension's shadow DOM
+		const firewall = (e) => {
+			// Check if extension UI is visible (veil visible = extension is active)
+			const isUIVisible = this.veil && this.veil.classList.contains('isVisible')
+			
+			if (!isUIVisible) {
+				return // Extension not active, allow everything through
+			}
+			
+			// Check if event is coming from our extension's shadow DOM
+			const path = e.composedPath && e.composedPath() || []
+			const isFromExtension = path.some(el => {
+				return el === this || 
+					   el === this.shadowRoot ||
+					   (el.getRootNode && el.getRootNode() === this.shadowRoot)
+			})
+			
+			// If event is from our extension, let it process normally within shadow DOM
+			// but still stop it from reaching the website
+			if (isFromExtension) {
+				// Stop propagation to website, but don't preventDefault
+				// so our internal handlers work
+				e.stopPropagation()
+				return
+			}
+			
+			// Event is from website (user clicked on website while dialog open)
+			// BLOCK EVERYTHING to prevent website shortcuts
+			e.preventDefault()
+			e.stopPropagation()
+			e.stopImmediatePropagation()
+			return false
+		}
+		
+		// Install PRIMARY firewall at DOCUMENT level in CAPTURE phase
+		// This ensures we catch events before ANY website code sees them
+		const eventTypes = ['keydown', 'keypress', 'keyup']
+		
+		eventTypes.forEach(type => {
+			document.addEventListener(type, firewall, {
+				capture: true,  // Highest priority - runs FIRST
+				passive: false  // Allow preventDefault
+			})
+		})
+		
+		// SECONDARY FIREWALL: Ensure shadow DOM events never bubble to website
+		// This catches any events that might escape the shadow boundary
+		this.shadowRoot.addEventListener('keydown', (e) => {
+			e.stopPropagation() // Stop at shadow boundary
+		}, { capture: false })
+		
+		this.shadowRoot.addEventListener('keyup', (e) => {
+			e.stopPropagation() // Stop at shadow boundary
+		}, { capture: false })
+		
+		this.shadowRoot.addEventListener('keypress', (e) => {
+			e.stopPropagation() // Stop at shadow boundary
+		}, { capture: false })
+	}
+
 	async checkAndShowFeedback() {
 		try {
-			const { shouldRequest, sessionCount } = await shouldRequestFeedback()
+			// Check for milestones FIRST (priority over feedback)
+			const { milestone, sessionCount } = await checkMilestoneReached()
+			
+			if (milestone) {
+				// Show celebration with confetti!
+				setTimeout(() => {
+					this.showCelebrationDialog(milestone)
+				}, 1000) // 1 second delay after session completion
+				return // Don't show feedback if showing celebration
+			}
+			
+			// If no milestone, check for feedback request
+			const { shouldRequest } = await shouldRequestFeedback()
 			
 			if (shouldRequest) {
 				// Show feedback dialog after a short delay
@@ -1266,7 +1745,7 @@ class Intention extends HTMLElement {
 				}, 2000) // 2 second delay after session completion
 			}
 		} catch (error) {
-			console.error('Error checking feedback eligibility:', error)
+			console.error('Error checking feedback/milestone eligibility:', error)
 		}
 	}
 
@@ -1284,6 +1763,46 @@ class Intention extends HTMLElement {
 		this.showFullTimerSelection()
 		this.timerSelection.classList.add('visible')
 		this.veil.classList.add('isVisible')
+		
+		// Setup focus trap for timer selection dialog
+		this.setupTimerDialogFocusTrap()
+		
+		// Auto-select "No timer" button and focus the start button
+		setTimeout(() => {
+			const noTimerBtn = this.shadowRoot.querySelector('.timer-btn[data-minutes="no-timer"]')
+			const startTimerBtn = this.shadowRoot.getElementById('startTimer')
+			if (noTimerBtn && startTimerBtn) {
+				noTimerBtn.click() // Trigger selection (enables start button)
+				// Focus the start button so Enter key will activate it
+				setTimeout(() => {
+					startTimerBtn.focus()
+				}, 100)
+			}
+		}, 50) // Small delay to ensure DOM is ready
+	}
+	
+	setupTimerDialogFocusTrap() {
+		// Remove existing listener if any
+		if (this.timerDialogKeyHandler) {
+			this.timerSelection.removeEventListener('keydown', this.timerDialogKeyHandler)
+		}
+		
+		// Trap Tab key within timer dialog
+		this.timerDialogKeyHandler = (e) => {
+			if (e.key === 'Tab') {
+				e.preventDefault()
+				e.stopPropagation()
+				e.stopImmediatePropagation()
+				
+				// Keep focus on the start button
+				const startTimerBtn = this.shadowRoot.getElementById('startTimer')
+				if (startTimerBtn && !startTimerBtn.disabled) {
+					startTimerBtn.focus()
+				}
+			}
+		}
+		
+		this.timerSelection.addEventListener('keydown', this.timerDialogKeyHandler, { capture: true })
 	}
 
 	hideTimerSelection() {
@@ -1473,37 +1992,61 @@ class Intention extends HTMLElement {
 			this.timerInterval = null
 		}
 
+		// Track session completion immediately when timer completes
+		trackSessionCompletion().then(() => {
+			// Check if we should show feedback or milestone celebration
+			this.checkAndShowFeedback()
+		}).catch(err => {
+			console.error('Failed to track session completion:', err)
+		})
+
 		// Show completion dialog
 		this.timerCompleteDialog.classList.add('visible')
 		this.veil.classList.add('isVisible')
 	}
 
 	extendTimer(additionalMinutes) {
-		if (this.currentTimer) {
-			// Add exactly the specified minutes in milliseconds
-			const additionalMs = additionalMinutes * 60 * 1000
-			this.currentTimer.endTime += additionalMs
-			
-			// Update total seconds for progress calculation
-			const now = Date.now()
-			const totalRemaining = Math.max(0, this.currentTimer.endTime - now)
-			this.currentTimer.totalSeconds = Math.ceil(totalRemaining / 1000)
-			
-			sessionStorage.setItem(`${extensionID}-timer`, JSON.stringify(this.currentTimer))
+		// Always start the new timer from NOW, not from the old expired time
+		const now = Date.now()
+		const additionalMs = additionalMinutes * 60 * 1000
+		const newEndTime = now + additionalMs
+		const newTotalSeconds = additionalMinutes * 60
+		
+		// Update or create timer with new times
+		this.currentTimer = {
+			active: true,
+			totalSeconds: newTotalSeconds,
+			startTime: now,
+			endTime: newEndTime,
+			minutes: additionalMinutes,
+			selectedButtonText: this.currentTimer ? this.currentTimer.selectedButtonText : null
 		}
+		
+		// Save updated timer state
+		sessionStorage.setItem(`${extensionID}-timer`, JSON.stringify(this.currentTimer))
 
-		// Reset completion flag since timer is extended
+		// Reset completion flag since timer is being restarted
 		this.timerCompleted = false
 
+		// Hide the completion dialog
 		this.timerCompleteDialog.classList.remove('visible')
 		this.veil.classList.remove('isVisible')
 
-		// Restart the interval if needed
-		if (!this.timerInterval) {
-			this.timerInterval = setInterval(() => {
-				this.updateTimerDisplay()
-			}, 1000)
+		// Show timer circle if not already visible
+		this.showTimerCircle()
+
+		// Clear any existing interval
+		if (this.timerInterval) {
+			clearInterval(this.timerInterval)
 		}
+
+		// Start fresh countdown
+		this.timerInterval = setInterval(() => {
+			this.updateTimerDisplay()
+		}, 1000)
+
+		// Update display immediately
+		this.updateTimerDisplay()
 	}
 
 	resetAndEditIntention() {
@@ -1633,7 +2176,7 @@ class Intention extends HTMLElement {
 
 customElements.define('intention-container', Intention)
 
-// YouTube-specific and GitHub-specific initialization
+// YouTube-specific initialization
 function initializeExtension() {
 	// Remove any existing containers to prevent duplicates
 	const existingContainers = document.querySelectorAll('intention-container')
@@ -1642,31 +2185,8 @@ function initializeExtension() {
 	// Create and inject new container
 	const container = document.createElement('intention-container')
 	
-	// GitHub-specific handling to prevent Turbo navigation conflicts
-	if (window.location.hostname.includes('github.com')) {
-		// GitHub uses Turbo for SPA navigation - handle it gracefully
-		const insertContainer = () => {
-			const body = document.body || document.documentElement
-			if (body && !document.body.contains(container)) {
-				body.appendChild(container)
-			}
-		}
-		
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', insertContainer)
-		} else {
-			insertContainer()
-		}
-		
-		// Listen for Turbo navigation events to prevent re-injection issues
-		document.addEventListener('turbo:load', () => {
-			// Don't re-inject, just ensure existing container stays
-			if (!document.body.contains(container)) {
-				document.body.appendChild(container)
-			}
-		})
-		
-	} else if (window.location.hostname.includes('youtube.com')) {
+	// YouTube-specific insertion method
+	if (window.location.hostname.includes('youtube.com')) {
 		// Wait for YouTube to finish loading and use a more stable insertion point
 		const insertContainer = () => {
 			const body = document.body || document.documentElement
