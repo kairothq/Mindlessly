@@ -5,16 +5,31 @@
 
 let STORAGE_CACHE
 
+// Initialize cache on extension startup
+chrome.storage.local.get(undefined, (storage) => {
+	STORAGE_CACHE = storage
+})
+
 /**
  * Run on install (or update).
  * TODO: add uninstall page
  */
 chrome.runtime.onInstalled.addListener((details) => {
 	if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
-		chrome.storage.local.set({
-			sites: {},
+		const initialStorage = {
+			sites: {
+				'0': 'www.youtube.com',
+				'1': 'www.instagram.com',
+				'2': 'web.whatsapp.com'
+			},
 			time: { active: false, use24Hrs: true, from: '09:00', to: '17:00' }
+		}
+		
+		// Set storage and update cache immediately
+		chrome.storage.local.set(initialStorage, () => {
+			STORAGE_CACHE = initialStorage
 		})
+		
 		//chrome.runtime.setUninstallURL('https://example.com/extension-survey');
 		const url = chrome.runtime.getURL('onboarding.html')
 		chrome.tabs.create({ url })

@@ -6,7 +6,8 @@
 	"description": "Transform mindless browsing into focused sessions. Set intentions, use smart timers, and stay purposeful online.",
 	"short_name": "Mindlessly",
 	"homepage_url": "https://github.com/kairothq/Mindlessly",
-	"permissions": ["webNavigation", "storage", "activeTab"],
+	"permissions": ["webNavigation", "storage", "activeTab", "scripting"],
+	"host_permissions": ["http://*/", "https://*/"],
 	"action": {
 		"default_popup": "popup.html",
 		"default_icon": {
@@ -16,8 +17,6 @@
 			"128": "/images/icon_128.png"
 		}
 	},
-	"optional_permissions": ["scripting"],
-	"host_permissions": ["http://*/", "https://*/"],
 	"background": {
 		"service_worker": "background.js"
 	},

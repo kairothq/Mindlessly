@@ -28,34 +28,24 @@ const addURL = function addURLToStorage(id, url) {
 			if (getKey(sites, _url.hostname) !== undefined) {
 				return reject(new Error('URL has already been added.'))
 			} else {
-				chrome.permissions.request(
-					{
-						permissions: ['scripting'],
-						origins: [_url.origin + '/']
-					},
-					function (granted) {
-						if (granted) {
-							sites[id] = _url.hostname
+				// With host_permissions in manifest, we don't need to request permissions
+				// The extension already has access to all http/https sites
+				sites[id] = _url.hostname
 
-							chrome.storage.local.set({ sites }, () => {
-								if (chrome.runtime.lastError) {
-									return reject(chrome.runtime.lastError)
-								}
-								console.log(
-									'Added' +
-										url +
-										'with ID' +
-										id +
-										'to storage.'
-								)
-
-								resolve(_url.hostname)
-							})
-						} else {
-							reject(new Error('Failed to grant permission.'))
-						}
+				chrome.storage.local.set({ sites }, () => {
+					if (chrome.runtime.lastError) {
+						return reject(chrome.runtime.lastError)
 					}
-				)
+					console.log(
+						'Added ' +
+							url +
+							' with ID ' +
+							id +
+							' to storage.'
+					)
+
+					resolve(_url.hostname)
+				})
 			}
 		})
 	})
