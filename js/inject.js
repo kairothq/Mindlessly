@@ -1035,7 +1035,7 @@ template.innerHTML = /*html*/ `
 			<div class="timer-btn" data-minutes="custom">Custom</div>
 		</div>
 		<div class="custom-timer" id="customTimer">
-			<input type="number" id="customMinutes" min="1" max="120" value="5" />
+			<input type="number" id="customMinutes" min="1" max="120" value="6" />
 			<span>minutes</span>
 		</div>
 		<button class="start-timer-btn" id="startTimer" disabled>Start Timer</button>
