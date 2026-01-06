@@ -1,28 +1,435 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<link rel="stylesheet" href="style/popup.css" />
-	</head>
-	<body>
-		<div class="popup">
-			<h1>Mindlessly</h1>
-			<div class="action-prohibited">
-				<p class="hint">Mindlessly cannot be used on internal pages.</p>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		:root {
+			--bg: #050505;
+			--surface: #0d0d0d;
+			--surface-2: #141414;
+			--border: rgba(255, 255, 255, 0.06);
+			--border-hover: rgba(255, 255, 255, 0.12);
+			--text: #fafafa;
+			--text-secondary: #888;
+			--text-tertiary: #555;
+			--accent: #e8ff47;
+			--accent-hover: #f0ff6a;
+			--accent-dim: rgba(232, 255, 71, 0.08);
+			--error: #ff4757;
+			--success: #2ed573;
+		}
+
+		body {
+			width: 320px;
+			background: var(--bg);
+			color: var(--text);
+			font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+			font-size: 14px;
+			line-height: 1.5;
+		}
+
+		.popup {
+			padding: 20px;
+		}
+
+		/* Header */
+		.header {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			margin-bottom: 20px;
+			padding-bottom: 16px;
+			border-bottom: 1px solid var(--border);
+		}
+
+		.logo {
+			width: 36px;
+			height: 36px;
+			background: url('images/icon_128.png') no-repeat center;
+			background-size: contain;
+			border-radius: 10px;
+		}
+
+		.brand {
+			flex: 1;
+		}
+
+		.brand-name {
+			font-size: 16px;
+			font-weight: 600;
+			color: var(--text);
+		}
+
+		.brand-tagline {
+			font-size: 12px;
+			color: var(--text-secondary);
+		}
+
+		/* Status indicator */
+		.status {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			font-size: 11px;
+			color: var(--text-secondary);
+			padding: 4px 10px;
+			background: var(--surface-2);
+			border-radius: 100px;
+		}
+
+		.status-dot {
+			width: 6px;
+			height: 6px;
+			background: var(--success);
+			border-radius: 50%;
+		}
+
+		/* Content sections */
+		.action-prohibited,
+		.add-website,
+		.remove-website {
+			display: none;
+		}
+
+		.action-prohibited.is-visible,
+		.add-website.is-visible,
+		.remove-website.is-visible {
+			display: block;
+		}
+
+		/* Current site display */
+		.current-site {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 14px 16px;
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			margin-bottom: 16px;
+		}
+
+		.site-icon {
+			width: 32px;
+			height: 32px;
+			background: var(--surface-2);
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.site-icon svg {
+			width: 18px;
+			height: 18px;
+			color: var(--text-secondary);
+		}
+
+		.site-info {
+			flex: 1;
+			min-width: 0;
+		}
+
+		.site-name {
+			font-size: 14px;
+			font-weight: 500;
+			color: var(--text);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.site-status {
+			font-size: 12px;
+			color: var(--text-secondary);
+		}
+
+		.site-status.tracked {
+			color: var(--accent);
+		}
+
+		/* Buttons */
+		.btn {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			width: 100%;
+			padding: 14px 20px;
+			border: none;
+			border-radius: 12px;
+			font-size: 14px;
+			font-weight: 600;
+			font-family: inherit;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+		.btn svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.btn-primary {
+			background: var(--accent);
+			color: #000;
+		}
+
+		.btn-primary:hover {
+			background: var(--accent-hover);
+			transform: translateY(-1px);
+			box-shadow: 0 4px 12px rgba(232, 255, 71, 0.2);
+		}
+
+		.btn-secondary {
+			background: var(--surface);
+			color: var(--text);
+			border: 1px solid var(--border);
+		}
+
+		.btn-secondary:hover {
+			background: var(--surface-2);
+			border-color: var(--border-hover);
+		}
+
+		.btn-danger {
+			background: rgba(255, 71, 87, 0.1);
+			color: var(--error);
+			border: 1px solid rgba(255, 71, 87, 0.2);
+		}
+
+		.btn-danger:hover {
+			background: rgba(255, 71, 87, 0.15);
+			border-color: rgba(255, 71, 87, 0.3);
+		}
+
+		/* Hint text */
+		.hint {
+			margin-top: 12px;
+			font-size: 12px;
+			color: var(--text-tertiary);
+			text-align: center;
+			line-height: 1.5;
+		}
+
+		/* Prohibited state */
+		.prohibited-icon {
+			width: 48px;
+			height: 48px;
+			margin: 0 auto 16px;
+			background: var(--surface);
+			border-radius: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.prohibited-icon svg {
+			width: 24px;
+			height: 24px;
+			color: var(--text-tertiary);
+		}
+
+		.prohibited-title {
+			font-size: 15px;
+			font-weight: 600;
+			color: var(--text);
+			text-align: center;
+			margin-bottom: 8px;
+		}
+
+		.prohibited-text {
+			font-size: 13px;
+			color: var(--text-secondary);
+			text-align: center;
+			line-height: 1.5;
+		}
+
+		/* Quick actions */
+		.quick-actions {
+			display: flex;
+			gap: 8px;
+			margin-top: 16px;
+			padding-top: 16px;
+			border-top: 1px solid var(--border);
+		}
+
+		.quick-action {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			padding: 10px;
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			font-size: 12px;
+			color: var(--text-secondary);
+			text-decoration: none;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+
+		.quick-action:hover {
+			background: var(--surface-2);
+			color: var(--text);
+			border-color: var(--border-hover);
+		}
+
+		.quick-action svg {
+			width: 14px;
+			height: 14px;
+		}
+
+		/* Footer */
+		.footer {
+			margin-top: 16px;
+			padding-top: 12px;
+			border-top: 1px solid var(--border);
+			text-align: center;
+		}
+
+		.footer-text {
+			font-size: 11px;
+			color: var(--text-tertiary);
+		}
+
+		.footer-text a {
+			color: var(--text-secondary);
+			text-decoration: none;
+		}
+
+		.footer-text a:hover {
+			color: var(--accent);
+		}
+	</style>
+</head>
+<body>
+	<div class="popup">
+		<!-- Header -->
+		<div class="header">
+			<div class="logo"></div>
+			<div class="brand">
+				<div class="brand-name">Mindlessly</div>
+				<div class="brand-tagline">Browse with intention</div>
 			</div>
-			<div class="add-website">
-				<button class="add-button primary add">
-					<!-- popup.js -->
-				</button>
-				<p class="hint">Browse mindfully with purpose.</p>
-			</div>
-			<div class="remove-website">
-				<button class="remove-button delete"><!-- popup.js --></button>
-				<p class="hint">
-					You can set sleep times for this extension<br />
-					on the options page.
-				</p>
+			<div class="status">
+				<span class="status-dot"></span>
+				Active
 			</div>
 		</div>
-	</body>
+
+		<!-- Action: Prohibited (internal pages) -->
+		<div class="action-prohibited">
+			<div class="prohibited-icon">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="12" cy="12" r="10"></circle>
+					<line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+				</svg>
+			</div>
+			<div class="prohibited-title">Internal Page</div>
+			<p class="prohibited-text">
+				Mindlessly can't run on browser internal pages. Visit a regular website to use it.
+			</p>
+		</div>
+
+		<!-- Action: Add Website -->
+		<div class="add-website">
+			<div class="current-site">
+				<div class="site-icon">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="2" y1="12" x2="22" y2="12"></line>
+						<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+					</svg>
+				</div>
+				<div class="site-info">
+					<div class="site-name" id="addSiteName">website.com</div>
+					<div class="site-status">Not tracked yet</div>
+				</div>
+			</div>
+
+			<button class="btn btn-primary add-button">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+					<circle cx="12" cy="12" r="10"></circle>
+					<line x1="12" y1="8" x2="12" y2="16"></line>
+					<line x1="8" y1="12" x2="16" y2="12"></line>
+				</svg>
+				<span>Add to Mindfully</span>
+			</button>
+
+			<p class="hint">
+				You'll see an intention prompt when visiting this site
+			</p>
+		</div>
+
+		<!-- Action: Remove Website -->
+		<div class="remove-website">
+			<div class="current-site">
+				<div class="site-icon" style="background: var(--accent-dim);">
+					<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+						<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+						<polyline points="22 4 12 14.01 9 11.01"></polyline>
+					</svg>
+				</div>
+				<div class="site-info">
+					<div class="site-name" id="removeSiteName">website.com</div>
+					<div class="site-status tracked">Currently tracked</div>
+				</div>
+			</div>
+
+			<button class="btn btn-danger remove-button">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="12" cy="12" r="10"></circle>
+					<line x1="15" y1="9" x2="9" y2="15"></line>
+					<line x1="9" y1="9" x2="15" y2="15"></line>
+				</svg>
+				<span>Remove from tracking</span>
+			</button>
+
+			<p class="hint">
+				You can customize active hours in settings
+			</p>
+		</div>
+
+		<!-- Quick Actions -->
+		<div class="quick-actions">
+			<a class="quick-action" id="optionsLink">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="12" cy="12" r="3"></circle>
+					<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+				</svg>
+				Settings
+			</a>
+			<a class="quick-action" href="mailto:divykairoth@gmail.com?subject=Mindlessly%20Ticket">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="12" cy="12" r="10"></circle>
+					<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+					<line x1="12" y1="17" x2="12.01" y2="17"></line>
+				</svg>
+				Help
+			</a>
+		</div>
+
+		<!-- Footer -->
+		<div class="footer">
+			<p class="footer-text">
+				Made by <a href="https://www.linkedin.com/in/divy-kairoth/" target="_blank">Divy Kairoth</a>
+			</p>
+		</div>
+	</div>
+
 	<script type="module" src="js/popup.js"></script>
+</body>
 </html>

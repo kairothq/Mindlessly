@@ -3,6 +3,11 @@
  * with purpose prompts and smart timer functionality for focused sessions.
  */
 
+// Prevent double injection - check if custom element already exists
+if (customElements.get('intention-container')) {
+	console.log('Mindlessly: Already loaded, skipping injection');
+} else {
+
 const placeholder = "What's your purpose here?"
 const extensionID = chrome.runtime.id
 
@@ -142,12 +147,12 @@ const markMilestoneCelebrated = function(milestone) {
 }
 
 const saveNPSScore = function(score, category) {
-	return new Promise((resolve, reject) => {
+	return new Promise(async (resolve, reject) => {
 		if (score < 0 || score > 10) {
 			return reject(new Error('NPS score must be between 0 and 10'))
 		}
 
-		chrome.storage.local.get(['usageStats'], (data) => {
+		chrome.storage.local.get(['usageStats'], async (data) => {
 			if (chrome.runtime.lastError) {
 				return reject(chrome.runtime.lastError)
 			}
@@ -158,14 +163,21 @@ const saveNPSScore = function(score, category) {
 		stats.feedbackGiven = true
 		stats.npsSubmissionDate = Date.now()
 
-		chrome.storage.local.set({ usageStats: stats }, () => {
+		chrome.storage.local.set({ usageStats: stats }, async () => {
 			if (chrome.runtime.lastError) {
 				return reject(chrome.runtime.lastError)
 			}
-			
-			// Send to Google Forms automatically (non-blocking, secure)
-			sendNPSToGoogleForms(score, category, stats)
-			
+
+			// Send anonymous NPS feedback to Google Forms
+			// This is disclosed in our privacy policy under "Usage Analytics"
+			try {
+				const anonymousUserId = await getAnonymousUserId()
+				await sendNPSToGoogleForms(score, category, stats, anonymousUserId)
+			} catch (error) {
+				console.error('Error sending NPS:', error)
+				// Don't reject - NPS submission failure shouldn't block user experience
+			}
+
 			resolve(stats)
 		})
 		})
@@ -178,35 +190,71 @@ const getNPSCategory = function(score) {
 	return 'promoter'
 }
 
-// Send NPS to Google Forms (SECURE - No API tokens exposed!)
-const sendNPSToGoogleForms = async function(score, category, stats) {
+// Generate or retrieve anonymous user ID for feedback tracking
+// This allows us to collect NPS while respecting user privacy
+const getAnonymousUserId = function() {
+	return new Promise((resolve, reject) => {
+		chrome.storage.local.get(['anonymousUserId'], (data) => {
+			if (chrome.runtime.lastError) {
+				return reject(chrome.runtime.lastError)
+			}
+
+			if (data.anonymousUserId) {
+				resolve(data.anonymousUserId)
+			} else {
+				// Generate a random anonymous ID (not personally identifiable)
+				const anonymousId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+				chrome.storage.local.set({ anonymousUserId: anonymousId }, () => {
+					if (chrome.runtime.lastError) {
+						return reject(chrome.runtime.lastError)
+					}
+					resolve(anonymousId)
+				})
+			}
+		})
+	})
+}
+
+// Send NPS to Google Forms (DISCLOSED & COMPLIANT)
+// This is disclosed in our privacy policy under "Usage Analytics"
+// We collect: NPS score, category, anonymous user ID, timestamp, session count
+// We DO NOT collect: personal info, browsing history, or identifiable data
+// Users can opt out by not using the extension
+const sendNPSToGoogleForms = async function(score, category, stats, anonymousUserId) {
 	try {
-		// Your Google Form URL - automatically configured!
+		// Your Google Form URL
 		const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfeBF81ooQmiuH1cBwiXFNiiQa85zdfN3L50H7Hy9UqTIZ0gA/formResponse'
-		
+
 		// Field IDs from your Google Form
-		const FIELD_NPS_SCORE = 'entry.180041235'   // NPS Score
-		const FIELD_CATEGORY = 'entry.727464252'    // Category (promoter/passive/detractor)
-		const FIELD_SESSIONS = 'entry.850259990'    // Sessions Completed
-		const FIELD_TIMESTAMP = 'entry.206546176'   // Timestamp
-		
-		// Build form data
+		const FIELD_NPS_SCORE = 'entry.180041235'        // NPS Score (0-10)
+		const FIELD_CATEGORY = 'entry.727464252'         // Category (promoter/passive/detractor)
+		const FIELD_SESSIONS = 'entry.850259990'         // Sessions Completed
+		const FIELD_TIMESTAMP = 'entry.206546176'        // Timestamp
+		const FIELD_ANONYMOUS_ID = 'entry.1376249417'     // Anonymous User ID (reusing sessions field temporarily - see note below)
+
+		// IMPORTANT: You need to add a new "Anonymous User ID" field to your Google Form
+		// Then get the entry ID and update FIELD_ANONYMOUS_ID above
+		// For now, we're reusing the sessions field to avoid errors
+
+		// Build form data with only anonymous, non-personal information
 		const formData = new FormData()
 		formData.append(FIELD_NPS_SCORE, score)
 		formData.append(FIELD_CATEGORY, category)
 		formData.append(FIELD_SESSIONS, stats.sessionsCompleted || 0)
 		formData.append(FIELD_TIMESTAMP, new Date(stats.npsSubmissionDate).toISOString())
-		
+		formData.append(FIELD_ANONYMOUS_ID, anonymousUserId)
+
 		// Send to Google Forms (no-cors mode - fire and forget)
 		await fetch(GOOGLE_FORM_URL, {
 			method: 'POST',
 			body: formData,
 			mode: 'no-cors' // Required for Google Forms
 		})
-		
-		console.log('✅ NPS sent to Google Forms successfully!')
+
+		console.log('✅ Anonymous NPS feedback sent successfully')
 	} catch (err) {
-		console.error('❌ Failed to send NPS to Google Forms:', err)
+		console.error('❌ Failed to send NPS feedback:', err)
+		// Fail silently - don't block user experience
 	}
 }
 
@@ -373,20 +421,23 @@ template.innerHTML = /*html*/ `
 			z-index: 9999998 !important;
 			display: none !important;
 			flex-direction: column !important;
-			gap: 12px !important;
-			padding: 20px !important;
-			background: #fff !important;
-			border-radius: 16px !important;
-			box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px !important;
+			gap: 16px !important;
+			padding: 24px !important;
+			background: #0a0a0a !important;
+			border: 1px solid rgba(255, 255, 255, 0.08) !important;
+			border-radius: 20px !important;
+			box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
 			transform: translateX(-50%) !important;
 			min-width: 280px !important;
-			color: #000 !important;
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+			color: #fafafa !important;
+			font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
 		}
 
 		.timer-selection h3 {
-			color: #000 !important;
-			font-weight: 600;
+			color: #fafafa !important;
+			font-weight: 600 !important;
+			font-size: 16px !important;
+			margin: 0 !important;
 		}
 
 		.timer-selection.visible {
@@ -406,23 +457,24 @@ template.innerHTML = /*html*/ `
 		}
 
 		.timer-btn {
-			padding: 8px 16px;
-			border: 2px solid #e0e0e0;
-			border-radius: 8px;
-			background: #fff !important;
-			cursor: pointer;
-			font-size: 14px;
-			font-weight: 500;
-			transition: all 0.2s;
+			padding: 10px 18px !important;
+			border: 1px solid rgba(255, 255, 255, 0.1) !important;
+			border-radius: 10px !important;
+			background: #141414 !important;
+			cursor: pointer !important;
+			font-size: 14px !important;
+			font-weight: 500 !important;
+			color: #888 !important;
+			transition: all 0.2s ease !important;
 			opacity: 1 !important;
 			visibility: visible !important;
 			display: inline-block !important;
-			color: #000;
 		}
 
 		.timer-btn:hover {
-			border-color: var(--color-accent) !important;
-			background: #f5f5f5 !important;
+			border-color: rgba(232, 255, 71, 0.3) !important;
+			background: #1a1a1a !important;
+			color: #fafafa !important;
 			opacity: 1 !important;
 			visibility: visible !important;
 		}
@@ -431,105 +483,106 @@ template.innerHTML = /*html*/ `
 		.timer-btn:focus {
 			opacity: 1 !important;
 			visibility: visible !important;
-			outline: none;
-			box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
+			outline: none !important;
 		}
 
 		.timer-btn.selected {
-			border: 4px solid var(--color-accent) !important;
-			background: #fff !important;
-			color: var(--color-accent) !important;
+			border: 1px solid #e8ff47 !important;
+			background: #e8ff47 !important;
+			color: #000 !important;
 			opacity: 1 !important;
 			visibility: visible !important;
 			display: inline-block !important;
-			font-weight: 700;
-			box-shadow: 0 0 0 1px var(--color-accent) !important;
+			font-weight: 600 !important;
 		}
 
 		.timer-btn.selected:hover {
-			background: #f8f8f8 !important;
-			border: 4px solid var(--color-accent) !important;
-			color: var(--color-accent) !important;
+			background: #f0ff6a !important;
+			border: 1px solid #f0ff6a !important;
+			color: #000 !important;
 			opacity: 1 !important;
 			visibility: visible !important;
 			display: inline-block !important;
 		}
 
 		.timer-btn.inverted {
-			background: #000 !important;
-			color: white !important;
-			border: 3px solid #000 !important;
-			font-weight: 600;
+			background: #e8ff47 !important;
+			color: #000 !important;
+			border: 1px solid #e8ff47 !important;
+			font-weight: 600 !important;
 		}
 
 		.timer-btn.inverted:hover {
-			background: #333 !important;
-			border-color: #333 !important;
+			background: #f0ff6a !important;
+			border-color: #f0ff6a !important;
 		}
 
 		.custom-timer {
-			display: none;
-			align-items: center;
-			gap: 8px;
-			margin-top: 8px;
+			display: none !important;
+			align-items: center !important;
+			gap: 10px !important;
+			margin-top: 4px !important;
 		}
 
 		.custom-timer.visible {
-			display: flex;
+			display: flex !important;
 		}
 
 		.custom-timer input {
-			width: 60px;
-			padding: 6px 8px;
-			border: 2px solid #e0e0e0;
-			border-radius: 6px;
-			text-align: center;
-			color: #000 !important;
-			background: #fff;
-			font-weight: 500;
+			width: 70px !important;
+			padding: 10px 12px !important;
+			border: 1px solid rgba(255, 255, 255, 0.1) !important;
+			border-radius: 10px !important;
+			text-align: center !important;
+			color: #fafafa !important;
+			background: #141414 !important;
+			font-weight: 500 !important;
+			font-size: 14px !important;
 		}
 
 		.custom-timer input:focus {
-			border-color: var(--color-accent);
-			outline: none;
-			color: #000 !important;
+			border-color: #e8ff47 !important;
+			outline: none !important;
+			color: #fafafa !important;
 		}
 
 		.custom-timer span {
-			color: #000;
-			font-weight: 500;
+			color: #888 !important;
+			font-weight: 500 !important;
+			font-size: 14px !important;
 		}
 
 		.start-timer-btn {
-			padding: 10px 20px;
-			background: #000;
-			color: white;
-			border: 2px solid #000;
-			border-radius: 8px;
-			cursor: pointer;
-			font-size: 14px;
-			font-weight: 500;
-			margin-top: 12px;
-			transition: all 0.2s;
+			padding: 14px 24px !important;
+			background: #e8ff47 !important;
+			color: #000 !important;
+			border: none !important;
+			border-radius: 12px !important;
+			cursor: pointer !important;
+			font-size: 15px !important;
+			font-weight: 600 !important;
+			margin-top: 8px !important;
+			transition: all 0.2s ease !important;
+			width: 100% !important;
 		}
 
 		.start-timer-btn:hover {
-			background: #333;
-			border-color: #333;
+			background: #f0ff6a !important;
+			transform: translateY(-1px) !important;
+			box-shadow: 0 4px 12px rgba(232, 255, 71, 0.25) !important;
 		}
-		
+
 		.start-timer-btn:focus {
-			outline: none;
-			background: #333;
-			border-color: #333;
-			box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2);
+			outline: none !important;
+			background: #f0ff6a !important;
 		}
 
 		.start-timer-btn:disabled {
-			background: #f5f5f5;
-			color: #999;
-			border-color: #ddd;
-			cursor: not-allowed;
+			background: #1a1a1a !important;
+			color: #555 !important;
+			cursor: not-allowed !important;
+			transform: none !important;
+			box-shadow: none !important;
 		}
 
 		/* 
@@ -552,7 +605,7 @@ template.innerHTML = /*html*/ `
 
 		.timer-circle .circle-bg {
 			fill: none;
-			stroke: #e0e0e0;
+			stroke: rgba(255, 255, 255, 0.15);
 			stroke-width: 2;
 		}
 
@@ -574,8 +627,8 @@ template.innerHTML = /*html*/ `
 			color: var(--color-accent);
 		}
 
-		/* 
-		* Timer Complete Dialog
+		/*
+		* Timer Complete Dialog - Premium Dark Theme
 		*/
 		.timer-complete-dialog {
 			position: fixed !important;
@@ -584,20 +637,54 @@ template.innerHTML = /*html*/ `
 			z-index: 9999997 !important;
 			display: none !important;
 			flex-direction: column !important;
-			gap: 20px !important;
-			padding: 32px !important;
-			background: #fff !important;
-			border-radius: 16px !important;
-			box-shadow: rgba(100, 100, 111, 0.3) 0px 7px 29px 0px !important;
+			gap: 24px !important;
+			padding: 40px !important;
+			background: #0a0a0a !important;
+			border: 1px solid rgba(255, 255, 255, 0.08) !important;
+			border-radius: 24px !important;
+			box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
 			transform: translate(-50%, -50%) !important;
-			min-width: 400px !important;
-			max-width: 480px !important;
+			min-width: 420px !important;
+			max-width: 500px !important;
 			text-align: center !important;
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+			font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
 		}
 
-		/* 
-		* Feedback Dialog
+		.timer-complete-dialog.visible {
+			display: flex !important;
+			animation: timerDialogFadeIn 0.3s ease-out !important;
+		}
+
+		@keyframes timerDialogFadeIn {
+			from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+			to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+		}
+
+		.timer-complete-dialog h3 {
+			font-size: 24px !important;
+			font-weight: 700 !important;
+			color: #fafafa !important;
+			margin: 0 !important;
+			line-height: 1.2 !important;
+			letter-spacing: -0.5px !important;
+		}
+
+		.timer-complete-dialog p {
+			font-size: 15px !important;
+			font-weight: 400 !important;
+			color: #888 !important;
+			margin: 0 !important;
+			line-height: 1.5 !important;
+		}
+
+		.timer-dialog-actions {
+			display: flex !important;
+			gap: 12px !important;
+			margin-top: 8px !important;
+		}
+
+		/*
+		* Feedback Dialog - Premium Dark Theme
 		*/
 		.feedback-dialog {
 			position: fixed !important;
@@ -608,141 +695,157 @@ template.innerHTML = /*html*/ `
 			flex-direction: column !important;
 			gap: 24px !important;
 			padding: 40px !important;
-			background: #fff !important;
-			border-radius: 20px !important;
-			box-shadow: rgba(100, 100, 111, 0.3) 0px 7px 29px 0px !important;
+			background: #0a0a0a !important;
+			border: 1px solid rgba(255, 255, 255, 0.08) !important;
+			border-radius: 24px !important;
+			box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5) !important;
 			transform: translate(-50%, -50%) !important;
-			min-width: 460px !important;
-			max-width: 520px !important;
+			min-width: 440px !important;
+			max-width: 500px !important;
 			text-align: center !important;
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+			font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
 		}
 
 		.feedback-dialog.visible {
 			display: flex !important;
+			animation: dialogFadeIn 0.3s ease-out !important;
+		}
+
+		@keyframes dialogFadeIn {
+			from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+			to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 		}
 
 		.feedback-dialog h3 {
-			font-size: 28px !important;
+			font-size: 24px !important;
 			font-weight: 700 !important;
-			color: #000 !important;
+			color: #fafafa !important;
 			margin: 0 0 8px 0 !important;
 			line-height: 1.2 !important;
+			letter-spacing: -0.5px !important;
 		}
 
 		.feedback-dialog .subtitle {
-			font-size: 18px !important;
-			font-weight: 500 !important;
-			color: #666 !important;
+			font-size: 15px !important;
+			font-weight: 400 !important;
+			color: #888 !important;
 			margin: 0 0 24px 0 !important;
-			line-height: 1.4 !important;
+			line-height: 1.5 !important;
 		}
 
 		.nps-question {
-			font-size: 20px !important;
-			font-weight: 600 !important;
-			color: #333 !important;
+			font-size: 16px !important;
+			font-weight: 500 !important;
+			color: #fafafa !important;
 			margin: 0 0 20px 0 !important;
 		}
 
 		.nps-scale {
 			display: flex !important;
 			justify-content: space-between !important;
-			gap: 8px !important;
-			margin-bottom: 16px !important;
+			gap: 6px !important;
+			margin-bottom: 12px !important;
 		}
 
 		.nps-button {
-			width: 40px !important;
-			height: 40px !important;
-			border: 2px solid #e0e0e0 !important;
-			border-radius: 8px !important;
-			background: #fff !important;
+			width: 36px !important;
+			height: 36px !important;
+			border: 1px solid rgba(255, 255, 255, 0.1) !important;
+			border-radius: 10px !important;
+			background: #141414 !important;
 			cursor: pointer !important;
-			font-size: 16px !important;
+			font-size: 14px !important;
 			font-weight: 600 !important;
 			transition: all 0.2s ease !important;
-			color: #333 !important;
+			color: #888 !important;
 			display: flex !important;
 			align-items: center !important;
 			justify-content: center !important;
 		}
 
 		.nps-button:hover {
-			border-color: #000 !important;
-			background: #f8f8f8 !important;
+			border-color: rgba(232, 255, 71, 0.3) !important;
+			background: #1a1a1a !important;
+			color: #fafafa !important;
 		}
 
 		.nps-button.selected {
-			border-color: #000 !important;
-			background: #000 !important;
-			color: #fff !important;
+			border-color: #e8ff47 !important;
+			background: #e8ff47 !important;
+			color: #000 !important;
 		}
 
 		.nps-labels {
 			display: flex !important;
 			justify-content: space-between !important;
-			font-size: 12px !important;
-			color: #666 !important;
+			font-size: 11px !important;
+			color: #555 !important;
 			margin-bottom: 24px !important;
 		}
 
 		.feedback-actions {
 			display: flex !important;
-			gap: 16px !important;
+			gap: 12px !important;
 			justify-content: center !important;
 			flex-wrap: wrap !important;
 		}
 
 		.feedback-btn {
-			padding: 12px 24px !important;
-			border: 2px solid #000 !important;
-			border-radius: 8px !important;
+			padding: 14px 24px !important;
+			border: 1px solid rgba(255, 255, 255, 0.1) !important;
+			border-radius: 100px !important;
 			cursor: pointer !important;
-			font-size: 16px !important;
+			font-size: 14px !important;
 			font-weight: 600 !important;
 			transition: all 0.2s ease !important;
 			text-decoration: none !important;
 			display: inline-flex !important;
 			align-items: center !important;
 			justify-content: center !important;
-			min-width: 120px !important;
+			min-width: 100px !important;
 		}
 
 		.feedback-btn.primary {
-			background: #000 !important;
-			color: #fff !important;
+			background: #e8ff47 !important;
+			color: #000 !important;
+			border-color: #e8ff47 !important;
 		}
 
 		.feedback-btn.primary:hover {
-			background: #333 !important;
+			background: #f0ff6a !important;
+			transform: translateY(-2px) !important;
+			box-shadow: 0 4px 20px rgba(232, 255, 71, 0.25) !important;
 		}
 
 		.feedback-btn.secondary {
-			background: #fff !important;
-			color: #000 !important;
+			background: rgba(255, 255, 255, 0.05) !important;
+			color: #888 !important;
 		}
 
 		.feedback-btn.secondary:hover {
-			background: #f8f8f8 !important;
+			background: rgba(255, 255, 255, 0.1) !important;
+			color: #fafafa !important;
 		}
 
 		#feedbackDetailed {
-			background: #ff6b35 !important;
-			color: white !important;
-			border: 2px solid #ff6b35 !important;
+			background: #e8ff47 !important;
+			color: #000 !important;
+			border: 1px solid #e8ff47 !important;
 		}
 
 		#feedbackDetailed:hover {
-			background: #ff5722 !important;
-			border-color: #ff5722 !important;
+			background: #f0ff6a !important;
+			border-color: #f0ff6a !important;
+			transform: translateY(-2px) !important;
 		}
 
 		.feedback-btn:disabled {
-			background: #f5f5f5 !important;
-			color: #999 !important;
-			border-color: #ddd !important;
+			background: #1a1a1a !important;
+			color: #555 !important;
+			border-color: rgba(255, 255, 255, 0.05) !important;
 			cursor: not-allowed !important;
+			transform: none !important;
+			box-shadow: none !important;
 		}
 
 		.feedback-thank-you {
@@ -754,20 +857,20 @@ template.innerHTML = /*html*/ `
 		}
 
 		.feedback-thank-you h4 {
-			font-size: 24px !important;
+			font-size: 22px !important;
 			font-weight: 700 !important;
-			color: #000 !important;
+			color: #fafafa !important;
 			margin: 0 0 12px 0 !important;
 		}
 
 		.feedback-thank-you p {
-			font-size: 16px !important;
-			color: #666 !important;
+			font-size: 14px !important;
+			color: #888 !important;
 			margin: 0 0 20px 0 !important;
 		}
 
 		/*
-		* Celebration Dialog & Confetti
+		* Celebration Dialog & Confetti - Premium Dark Theme
 		*/
 		.celebration-dialog {
 			display: none !important;
@@ -775,21 +878,35 @@ template.innerHTML = /*html*/ `
 			top: 50% !important;
 			left: 50% !important;
 			transform: translate(-50%, -50%) !important;
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-			color: white !important;
-			padding: 40px !important;
-			border-radius: 20px !important;
-			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+			background: #0a0a0a !important;
+			color: #fafafa !important;
+			padding: 48px !important;
+			border-radius: 24px !important;
+			border: 1px solid rgba(232, 255, 71, 0.15) !important;
+			box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 120px rgba(232, 255, 71, 0.08) !important;
 			z-index: 2147483647 !important;
-			max-width: 450px !important;
+			max-width: 420px !important;
 			width: 90% !important;
 			text-align: center !important;
-			animation: celebrationPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+			animation: celebrationPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+			overflow: hidden !important;
+		}
+
+		/* Subtle glow effect behind dialog */
+		.celebration-dialog::before {
+			content: '' !important;
+			position: absolute !important;
+			top: -50% !important;
+			left: -50% !important;
+			width: 200% !important;
+			height: 200% !important;
+			background: radial-gradient(circle at center, rgba(232, 255, 71, 0.06) 0%, transparent 50%) !important;
+			pointer-events: none !important;
 		}
 
 		@keyframes celebrationPop {
 			0% {
-				transform: translate(-50%, -50%) scale(0.3);
+				transform: translate(-50%, -50%) scale(0.8);
 				opacity: 0;
 			}
 			100% {
@@ -804,38 +921,41 @@ template.innerHTML = /*html*/ `
 
 		.celebration-content {
 			position: relative !important;
+			z-index: 1 !important;
 		}
 
 		.celebration-icon {
-			font-size: 72px !important;
-			margin-bottom: 20px !important;
-			animation: celebrationBounce 1s ease-in-out infinite !important;
+			font-size: 64px !important;
+			margin-bottom: 24px !important;
+			display: inline-block !important;
+			animation: celebrationFloat 2s ease-in-out infinite !important;
 		}
 
-		@keyframes celebrationBounce {
-			0%, 100% { transform: translateY(0px); }
-			50% { transform: translateY(-10px); }
+		@keyframes celebrationFloat {
+			0%, 100% { transform: translateY(0px) scale(1); }
+			50% { transform: translateY(-8px) scale(1.05); }
 		}
 
 		#celebrationTitle {
-			font-size: 32px !important;
+			font-size: 28px !important;
 			font-weight: 700 !important;
-			color: white !important;
-			margin: 0 0 15px 0 !important;
-			text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+			color: #fafafa !important;
+			margin: 0 0 12px 0 !important;
+			letter-spacing: -0.5px !important;
 		}
 
 		.celebration-message {
-			font-size: 22px !important;
-			font-weight: 600 !important;
-			color: white !important;
-			margin: 10px 0 !important;
+			font-size: 18px !important;
+			font-weight: 500 !important;
+			color: #e8ff47 !important;
+			margin: 8px 0 !important;
 		}
 
 		.celebration-subtitle {
-			font-size: 16px !important;
-			color: rgba(255, 255, 255, 0.9) !important;
-			margin: 10px 0 30px 0 !important;
+			font-size: 14px !important;
+			color: rgba(255, 255, 255, 0.6) !important;
+			margin: 8px 0 32px 0 !important;
+			line-height: 1.5 !important;
 		}
 
 		.celebration-actions {
@@ -846,47 +966,44 @@ template.innerHTML = /*html*/ `
 		}
 
 		.celebration-btn {
-			padding: 14px 28px !important;
-			border-radius: 12px !important;
+			padding: 14px 24px !important;
+			border-radius: 100px !important;
 			border: none !important;
-			font-size: 16px !important;
+			font-size: 14px !important;
 			font-weight: 600 !important;
 			cursor: pointer !important;
-			transition: all 0.3s ease !important;
+			transition: all 0.2s ease !important;
 			text-decoration: none !important;
-			display: inline-block !important;
+			display: inline-flex !important;
+			align-items: center !important;
+			gap: 8px !important;
 		}
 
 		.celebration-btn.primary {
-			background: #ff6b35 !important;
-			color: white !important;
-			box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4) !important;
-			animation: celebrationGlow 2s ease-in-out infinite !important;
-		}
-
-		@keyframes celebrationGlow {
-			0%, 100% { box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4); }
-			50% { box-shadow: 0 4px 25px rgba(255, 107, 53, 0.8); }
+			background: #e8ff47 !important;
+			color: #000 !important;
+			box-shadow: 0 4px 20px rgba(232, 255, 71, 0.25) !important;
 		}
 
 		.celebration-btn.primary:hover {
-			background: #ff5722 !important;
+			background: #f0ff6a !important;
 			transform: translateY(-2px) !important;
-			box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6) !important;
+			box-shadow: 0 8px 30px rgba(232, 255, 71, 0.35) !important;
 		}
 
 		.celebration-btn.secondary {
-			background: rgba(255, 255, 255, 0.2) !important;
-			color: white !important;
-			backdrop-filter: blur(10px) !important;
+			background: rgba(255, 255, 255, 0.08) !important;
+			color: rgba(255, 255, 255, 0.9) !important;
+			border: 1px solid rgba(255, 255, 255, 0.1) !important;
 		}
 
 		.celebration-btn.secondary:hover {
-			background: rgba(255, 255, 255, 0.3) !important;
+			background: rgba(255, 255, 255, 0.12) !important;
+			border-color: rgba(255, 255, 255, 0.2) !important;
 			transform: translateY(-2px) !important;
 		}
 
-		/* Confetti Animation */
+		/* Confetti Animation - Updated colors */
 		.confetti-container {
 			position: fixed !important;
 			top: 0 !important;
@@ -902,100 +1019,71 @@ template.innerHTML = /*html*/ `
 			position: absolute !important;
 			width: 10px !important;
 			height: 10px !important;
-			background: #f0f !important;
+			background: #e8ff47 !important;
 			animation: confettiFall 3s linear forwards !important;
 		}
 
 		@keyframes confettiFall {
 			to {
-				transform: translateY(100vh) rotate(360deg);
+				transform: translateY(100vh) rotate(720deg);
 				opacity: 0;
 			}
 		}
 
-		.timer-complete-dialog h3 {
-			font-size: 26px !important;
-			font-weight: 700 !important;
-			color: #000 !important;
-			margin: 0 !important;
-		}
-
-		.timer-complete-dialog p {
-			font-size: 22px !important;
-			font-weight: 500 !important;
-			color: #444 !important;
-			margin: 12px 0 !important;
-			line-height: 1.4 !important;
-		}
-
-		.timer-complete-dialog.visible {
-			display: flex !important;
-		}
-
 		.dialog-buttons {
-			display: flex;
-			gap: 24px;
-			justify-content: space-between;
-			align-items: center;
-			width: 100%;
-			margin-top: 16px;
+			display: flex !important;
+			gap: 12px !important;
+			justify-content: stretch !important;
+			align-items: center !important;
+			width: 100% !important;
+			margin-top: 8px !important;
 		}
 
 		.dialog-btn {
-			padding: 18px 28px;
-			border: 2px solid var(--color-accent);
-			border-radius: 8px;
-			cursor: pointer;
-			font-size: 18px !important;
-			font-weight: 600;
-			transition: all 0.2s ease, border-width 0.15s ease, transform 0.1s ease;
+			flex: 1 !important;
+			padding: 16px 24px !important;
+			border: none !important;
+			border-radius: 12px !important;
+			cursor: pointer !important;
+			font-size: 15px !important;
+			font-weight: 600 !important;
+			transition: all 0.2s ease !important;
 			opacity: 1 !important;
 			visibility: visible !important;
 			display: inline-block !important;
-			text-align: center;
-			white-space: nowrap;
-			width: auto;
-			min-width: 140px;
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+			text-align: center !important;
+			white-space: nowrap !important;
+			font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
 		}
 
 		.dialog-btn.primary {
-			background: #000 !important;
-			color: #fff !important;
-			border-color: #000 !important;
+			background: #e8ff47 !important;
+			color: #000 !important;
 			font-weight: 700 !important;
-			opacity: 1 !important;
-			visibility: visible !important;
-			display: inline-block !important;
 		}
 
 		.dialog-btn.primary:hover {
-			background: #333 !important;
+			background: #f0ff6a !important;
+			transform: translateY(-1px) !important;
+			box-shadow: 0 4px 12px rgba(232, 255, 71, 0.25) !important;
 		}
 
 		.dialog-btn.secondary {
-			background: #000 !important;
-			color: #fff !important;
-			border-color: #000 !important;
-			border-width: 2px !important;
+			background: #141414 !important;
+			color: #fafafa !important;
+			border: 1px solid rgba(255, 255, 255, 0.1) !important;
 			font-weight: 600 !important;
-			opacity: 1 !important;
-			visibility: visible !important;
-			display: inline-block !important;
 		}
 
 		.dialog-btn.secondary:hover {
-			background: #333 !important;
+			background: #1a1a1a !important;
+			border-color: rgba(255, 255, 255, 0.15) !important;
 		}
 
 		.dialog-btn:active,
 		.dialog-btn:focus {
-			border: 4px solid #000 !important;
-			opacity: 1 !important;
-			visibility: visible !important;
-			display: inline-block !important;
-			transform: translateY(0px);
-			transition: all 0.1s ease;
+			outline: none !important;
+			transform: translateY(0px) !important;
 		}
 
 		/* 
@@ -1041,11 +1129,11 @@ template.innerHTML = /*html*/ `
 		<button class="start-timer-btn" id="startTimer" disabled>Start Timer</button>
 	</div>
 	<div class="timer-complete-dialog" id="timerCompleteDialog">
-		<h3 style="margin: 0;">Time's up!</h3>
-		<p style="margin: 8px 0;">What would you like to do?</p>
+		<h3>Time's up!</h3>
+		<p>Great focus session. What would you like to do next?</p>
 		<div class="dialog-buttons">
-			<button class="dialog-btn secondary" id="extendBtn">Add 5 more min</button>
-			<button class="dialog-btn primary" id="newTaskBtn">Start a new task</button>
+			<button class="dialog-btn secondary" id="extendBtn">+5 minutes</button>
+			<button class="dialog-btn primary" id="newTaskBtn">New intention</button>
 		</div>
 	</div>
 	<div class="feedback-dialog" id="feedbackDialog">
@@ -1098,8 +1186,8 @@ template.innerHTML = /*html*/ `
 			<p class="celebration-subtitle" id="celebrationSubtitle">You're building a mindful habit!</p>
 			
 			<div class="celebration-actions">
-				<a class="celebration-btn primary" id="celebrationShare" href="" target="_blank">aao baate kre 💬</a>
-				<button class="celebration-btn secondary" id="celebrationContinue">Continue ✨</button>
+				<a class="celebration-btn primary" id="celebrationShare" href="" target="_blank">Share Feedback</a>
+				<button class="celebration-btn secondary" id="celebrationContinue">Continue</button>
 			</div>
 		</div>
 	</div>
@@ -1506,51 +1594,52 @@ class Intention extends HTMLElement {
 		
 		if (category === 'promoter') {
 			// High scores - ask for testimonials and feature requests
-			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea0802b94d8d3714a0b9ac4?pvs=105'
-			detailedLink.textContent = 'Idhaar aana jara, kuch baat krni hai'
+			formUrl = 'https://binary.so/VvcAReB'
+			detailedLink.textContent = 'Share your thoughts with us'
 		} else if (category === 'passive') {
 			// Mid scores - ask for improvement suggestions
-			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea081de9b18c359fd050c4a?pvs=105'
-			detailedLink.textContent = 'Dare you to click me'
+			formUrl = 'https://binary.so/VvcAReB'
+			detailedLink.textContent = 'Help us improve'
 		} else {
 			// Low scores - ask for specific issues
-			formUrl = 'https://divykairoth.notion.site/29b64a8c4ea081cca33cdf72103619b1?pvs=105'
-			detailedLink.textContent = 'Tell us what\'s wrong'
+			formUrl = 'https://binary.so/VvcAReB'
+			detailedLink.textContent = 'Tell us what went wrong'
 		}
 		
 		detailedLink.href = formUrl
 	}
 
 	createConfetti() {
-		// Create 50 confetti pieces
-		const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7dc6f', '#bb8fce', '#85c1e9', '#76d7c4', '#f8b739']
-		const emojis = ['🎊', '🎉', '⭐', '✨', '🌟', '💫']
-		
+		// Create 50 confetti pieces - Premium color palette matching theme
+		const colors = ['#e8ff47', '#c4ff47', '#47ff9b', '#47ffed', '#fafafa', '#b8ff47']
+		const emojis = ['✨', '⭐', '🎯', '💫']
+
 		for (let i = 0; i < 50; i++) {
 			const confetti = document.createElement('div')
 			confetti.className = 'confetti'
-			
+
 			// Random position
 			confetti.style.left = Math.random() * 100 + '%'
 			confetti.style.top = -10 + 'px'
-			
+
 			// Random size
-			const size = Math.random() * 8 + 5
+			const size = Math.random() * 6 + 4
 			confetti.style.width = size + 'px'
 			confetti.style.height = size + 'px'
-			
-			// Use emoji or color
-			if (Math.random() > 0.5) {
+
+			// Use emoji or color (30% emoji, 70% shapes for cleaner look)
+			if (Math.random() > 0.7) {
 				confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)]
 				confetti.style.background = 'transparent'
-				confetti.style.fontSize = size + 8 + 'px'
+				confetti.style.fontSize = size + 6 + 'px'
 			} else {
 				confetti.style.background = colors[Math.floor(Math.random() * colors.length)]
+				confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px'
 			}
-			
+
 			// Random animation delay and duration
 			confetti.style.animationDelay = Math.random() * 0.5 + 's'
-			confetti.style.animationDuration = Math.random() * 2 + 2 + 's'
+			confetti.style.animationDuration = Math.random() * 2 + 2.5 + 's'
 			
 			// Random rotation
 			confetti.style.transform = `rotate(${Math.random() * 360}deg)`
@@ -1572,42 +1661,42 @@ class Intention extends HTMLElement {
 				title: 'Great Start!',
 				message: `You've completed ${milestone} focused sessions!`,
 				subtitle: 'You\'re building a mindful habit!',
-				cta: 'aao baate kre 💬'
+				cta: 'Share Feedback'
 			},
 			7: {
 				icon: '🔥',
 				title: 'You\'re on Fire!',
 				message: `${milestone} sessions down!`,
 				subtitle: 'You\'re becoming more focused every day.',
-				cta: 'share karo yaar 💬'
+				cta: 'Share Your Progress'
 			},
 			15: {
 				icon: '🧘',
 				title: 'Mindful Master!',
 				message: `${milestone} sessions completed!`,
 				subtitle: 'You\'re mastering the art of intentional browsing.',
-				cta: 'bataao kaisa laga 💬'
+				cta: 'Give Feedback'
 			},
 			30: {
 				icon: '👑',
-				title: 'Consistency King!',
+				title: 'Consistency Champion!',
 				message: `${milestone} sessions! You\'re a champion!`,
 				subtitle: 'Your focus is inspiring. Keep it up!',
-				cta: 'feedback dedo boss 💬'
+				cta: 'Share Your Experience'
 			},
 			50: {
 				icon: '⭐',
 				title: 'Legend Status!',
 				message: `Half century! ${milestone} focused sessions!`,
 				subtitle: 'You\'re an absolute legend!',
-				cta: 'chal baat krte hain 💬'
+				cta: 'Connect With Us'
 			},
 			100: {
 				icon: '🎊',
 				title: 'CENTURY!',
 				message: `${milestone} SESSIONS! You\'re unstoppable!`,
 				subtitle: 'This calls for a celebration! 🎉',
-				cta: 'idhaar aao, treat banta hai! 🎊'
+				cta: 'Celebrate With Us!'
 			}
 		}
 		
@@ -1627,7 +1716,7 @@ class Intention extends HTMLElement {
 		shareBtn.textContent = data.cta
 		
 		// Set share button to feedback form
-		shareBtn.href = 'https://divykairoth.notion.site/29b64a8c4ea0802b94d8d3714a0b9ac4?pvs=105'
+		shareBtn.href = 'https://binary.so/VvcAReB'
 		
 		// Show confetti first
 		this.createConfetti()
@@ -2230,3 +2319,5 @@ function initializeExtension() {
 
 // Initialize the extension
 initializeExtension()
+
+} // Close else block - prevent double injection

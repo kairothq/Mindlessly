@@ -20,9 +20,12 @@ chrome.runtime.onInstalled.addListener((details) => {
 			sites: {
 				'0': 'www.youtube.com',
 				'1': 'www.instagram.com',
-				'2': 'web.whatsapp.com'
+				'2': 'twitter.com',
+				'3': 'x.com',
+				'4': 'www.facebook.com'
 			},
-			time: { active: false, use24Hrs: true, from: '09:00', to: '17:00' }
+			time: { active: false, use24Hrs: true, from: '09:00', to: '17:00' },
+			user: { name: '', email: '', premiumUntil: null, onboarded: false }
 		}
 		
 		// Set storage and update cache immediately
@@ -66,6 +69,11 @@ function handleNavigation(data) {
 	// Prevent extension triggering on embedded content
 	if (data.transitionType === 'auto_subframe') return
 
+	// Skip chrome://, edge://, about:, and other restricted URLs
+	// These cannot be accessed by extensions and will cause errors
+	const restrictedProtocols = ['chrome:', 'chrome-extension:', 'edge:', 'about:', 'devtools:', 'view-source:']
+	if (restrictedProtocols.includes(url.protocol)) return
+
 	function handleInjection(_data) {
 		const { sites, time } = STORAGE_CACHE
 
@@ -75,35 +83,64 @@ function handleNavigation(data) {
 			const now = new Date()
 			const h = now.getHours()
 			const m = now.getMinutes()
-			const hh_mm = `${h < 10 ? '0' + h : h}:${h < 10 ? '0' + m : m}`
+			const hh_mm = `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m}`
 
 			const isActive = time.from < hh_mm && time.to > hh_mm
 
 			if (!isActive) return
 		}
 
-		if (Object.values(sites).some((e) => e === url.hostname)) {
+		// Check if hostname matches any tracked site
+		// Support both exact matches and subdomain matches (e.g., old.reddit.com matches reddit.com)
+		const hostname = url.hostname
+		const matchesSite = Object.values(sites).some((site) => {
+			// Exact match
+			if (site === hostname) return true
+			// Subdomain match: check if hostname ends with the site domain
+			// e.g., old.reddit.com ends with reddit.com
+			if (hostname.endsWith('.' + site.replace(/^www\./, ''))) return true
+			// Also check without www prefix on the tracked site
+			const siteWithoutWww = site.replace(/^www\./, '')
+			if (hostname === siteWithoutWww || hostname.endsWith('.' + siteWithoutWww)) return true
+			return false
+		})
+
+		if (matchesSite) {
 			// Inject WebComponents polyfill since Webcomponents are
 			// not supported (yet), see: https://bugs.chromium.org/p/chromium/issues/detail?id=390807#c59
 			//
 			// We also have to inject the polyfill here since executeScript doesn't support modules (yet)
-			chrome.scripting.executeScript(
-				{
+			try {
+				chrome.scripting.executeScript({
 					target: { tabId: _data.tabId },
 					files: ['js/polyfills/custom-elements.min.js']
-				},
-				() => {
-					chrome.scripting.executeScript({
+				}).then(() => {
+					// Check for errors before continuing
+					if (chrome.runtime.lastError) {
+						console.log('Mindlessly: Cannot inject on this page:', chrome.runtime.lastError.message)
+						return
+					}
+					return chrome.scripting.executeScript({
 						target: { tabId: _data.tabId },
 						files: ['js/inject.js']
 					})
-				}
-			)
+				}).catch(err => {
+					console.log('Mindlessly: Script injection failed:', err?.message || err)
+				})
+			} catch (err) {
+				console.log('Mindlessly: Injection error:', err?.message || err)
+			}
 
-			chrome.scripting.insertCSS({
-				target: { tabId: _data.tabId },
-				files: ['style/inject.css']
-			})
+			try {
+				chrome.scripting.insertCSS({
+					target: { tabId: _data.tabId },
+					files: ['style/inject.css']
+				}).catch(err => {
+					console.log('Mindlessly: CSS injection failed:', err?.message || err)
+				})
+			} catch (err) {
+				console.log('Mindlessly: CSS error:', err?.message || err)
+			}
 		}
 	}
 

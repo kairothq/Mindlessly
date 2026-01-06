@@ -7,8 +7,18 @@ let STORAGE_CACHE
 const actionProhibited = document.querySelector('.action-prohibited')
 const addWebsite = document.querySelector('.add-website')
 const addButton = document.querySelector('.add-button')
+const addSiteName = document.getElementById('addSiteName')
 const removeWebsite = document.querySelector('.remove-website')
 const removeButton = document.querySelector('.remove-button')
+const removeSiteName = document.getElementById('removeSiteName')
+const optionsLink = document.getElementById('optionsLink')
+
+// Set options link
+optionsLink.href = chrome.runtime.getURL('options.html')
+optionsLink.addEventListener('click', (e) => {
+	e.preventDefault()
+	chrome.runtime.openOptionsPage()
+})
 
 chrome.storage.local.get('sites', (data) => {
 	if (chrome.runtime.lastError) {
@@ -27,9 +37,9 @@ chrome.storage.local.get('sites', (data) => {
 
 		const url = new URL(tab.url)
 
-		addButton.textContent = `Add ${url.hostname}`
-		removeButton.textContent = `Remove ${url.hostname}`
-		console.log(url)
+		// Update site names
+		if (addSiteName) addSiteName.textContent = url.hostname
+		if (removeSiteName) removeSiteName.textContent = url.hostname
 
 		if (url.protocol !== 'http:' && url.protocol !== 'https:') {
 			actionProhibited.classList.add(IsVisibleClass)
