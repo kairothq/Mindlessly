@@ -1,13 +1,38 @@
 :root {
-	--color-background: #18191a;
-	--color-foreground: #242526;
-	--color-highlight: #3a3b3c;
-	--color-text: #aaaeb6;
-	--color-text-primary: #e8edf7;
-	--color-text-secondary: #95999d;
-	--color-text-destructive: #d84b4b;
-	--color-accent: rgba(0, 122, 255, 1);
-	--color-accent-hover: rgb(30, 139, 255);
-	--color-white: rgb(255, 255, 255);
+	/* Background colors */
+	--color-background: #050505;
+	--color-foreground: #0d0d0d;
+	--color-surface: #141414;
+	--color-surface-elevated: #1a1a1a;
+	--color-highlight: #242424;
+
+	/* Text colors */
+	--color-text: #888888;
+	--color-text-primary: #fafafa;
+	--color-text-secondary: #888888;
+	--color-text-tertiary: #555555;
+	--color-text-destructive: #ff4757;
+
+	/* Accent colors - Lime */
+	--color-accent: #e8ff47;
+	--color-accent-hover: #f0ff6a;
+	--color-accent-dim: rgba(232, 255, 71, 0.08);
+	--color-accent-glow: rgba(232, 255, 71, 0.15);
+
+	/* Other colors */
+	--color-white: #fafafa;
 	--color-secondary: rgba(0, 0, 0, 0.6);
+	--color-success: #2ed573;
+	--color-error: #ff4757;
+
+	/* Borders */
+	--color-border: rgba(255, 255, 255, 0.06);
+	--color-border-hover: rgba(255, 255, 255, 0.12);
+
+	/* Radius */
+	--radius-sm: 8px;
+	--radius-md: 12px;
+	--radius-lg: 20px;
+	--radius-xl: 28px;
+	--radius-full: 100px;
 }

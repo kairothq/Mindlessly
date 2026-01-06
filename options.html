@@ -1,86 +1,617 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<title>Mindlessly &bull; Options</title>
-		<meta charset="UTF-8" />
-		<link rel="stylesheet" href="style/options.css" />
-	</head>
-	<body>
-		<div class="container">
-			<header>
-				<div>
-					<h1>Mindlessly</h1>
-					<h2>Options</h2>
-				</div>
-				<div class="logo"><div class="o"></div></div>
-			</header>
-			<section class="manage-websites">
-				<h2>Manage websites</h2>
-				<h3 class="description">
-					Add or remove websites that you'd like to browse
-					mindfully.
-				</h3>
-				<span class="separator"></span>
-				<ul class="url-list">
-					<!-- list items with url and remove button / options.js -->
-				</ul>
-				<form class="add-url-container flex">
-					<input
-						class="add-url-input"
-						type="text"
-						autocomplete="off"
-						placeholder="https://example.com/"
-					/>
-					<button class="add-url-button hidden primary add">
-						Add website
-					</button>
-				</form>
-				<p class="add-url-error hint">
-					<!-- URL error message / options.js -->
-				</p>
-				<p class="hint">
-					The URL entered must match the page URL exactly. <br />
-					💡 Tip: copy and paste the URL instead of typing it
-					yourself.
-				</p>
-			</section>
+<html lang="en">
+<head>
+	<title>Mindlessly &bull; Settings</title>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
 
-			<section class="manage-time hollow">
-				<label class="manage-time-toggle">
-					<input
-						class="manage-time-toggle-checkbox"
-						type="checkbox"
-					/>
-					Activate only during certain times
-				</label>
-				<h3 class="description">
-					Activates the extension only during a specific set time
-					period.
-				</h3>
-				<div class="time-edit-container hidden">
-					<form class="time-edit-select flex">
-						<div class="flex col">
-							<label>From</label>
-							<select name="from" id="from"></select>
-						</div>
-						<div class="flex col">
-							<label>To</label>
-							<select name="to" id="to"></select>
-						</div>
-					</form>
-					<p class="time-edit-response hint">
-						<!-- displays success message on time change / options.js -->
-					</p>
-					<div class="time-edit-change-format-container">
-						<button class="time-edit-change-format secondary">
-							<!-- toggle between 12 and 24 hr format / options.js -->
-						</button>
-					</div>
+		:root {
+			--bg: #050505;
+			--surface: #0d0d0d;
+			--surface-2: #141414;
+			--surface-3: #1a1a1a;
+			--border: rgba(255, 255, 255, 0.06);
+			--border-hover: rgba(255, 255, 255, 0.12);
+			--text: #fafafa;
+			--text-secondary: #888;
+			--text-tertiary: #555;
+			--accent: #e8ff47;
+			--accent-hover: #f0ff6a;
+			--accent-dim: rgba(232, 255, 71, 0.08);
+			--error: #ff4757;
+			--success: #2ed573;
+			--font-display: 'Instrument Serif', Georgia, serif;
+			--font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+		}
+
+		html {
+			scroll-behavior: smooth;
+		}
+
+		body {
+			background: var(--bg);
+			color: var(--text);
+			font-family: var(--font-body);
+			line-height: 1.6;
+			min-height: 100vh;
+		}
+
+		/* Noise texture */
+		body::before {
+			content: '';
+			position: fixed;
+			inset: 0;
+			background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+			opacity: 0.015;
+			pointer-events: none;
+			z-index: 0;
+		}
+
+		.container {
+			max-width: 640px;
+			margin: 0 auto;
+			padding: 48px 24px;
+			position: relative;
+			z-index: 1;
+		}
+
+		/* Header */
+		header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 48px;
+		}
+
+		.brand {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+		}
+
+		.logo {
+			width: 48px;
+			height: 48px;
+			background: url('images/icon_128.png') no-repeat center;
+			background-size: contain;
+			border-radius: 14px;
+		}
+
+		.brand-text h1 {
+			font-family: var(--font-display);
+			font-size: 24px;
+			font-weight: 400;
+			letter-spacing: -0.5px;
+			margin-bottom: 2px;
+		}
+
+		.brand-text p {
+			font-size: 13px;
+			color: var(--text-secondary);
+		}
+
+		.back-link {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			color: var(--text-secondary);
+			text-decoration: none;
+			font-size: 14px;
+			padding: 10px 16px;
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: 10px;
+			transition: all 0.2s;
+		}
+
+		.back-link:hover {
+			background: var(--surface-2);
+			color: var(--text);
+			border-color: var(--border-hover);
+		}
+
+		.back-link svg {
+			width: 16px;
+			height: 16px;
+		}
+
+		/* Sections */
+		section {
+			background: var(--surface);
+			border: 1px solid var(--border);
+			border-radius: 20px;
+			padding: 28px;
+			margin-bottom: 24px;
+		}
+
+		.section-header {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			margin-bottom: 20px;
+		}
+
+		.section-icon {
+			width: 40px;
+			height: 40px;
+			background: var(--accent-dim);
+			border: 1px solid rgba(232, 255, 71, 0.15);
+			border-radius: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.section-icon svg {
+			width: 20px;
+			height: 20px;
+			color: var(--accent);
+		}
+
+		.section-title {
+			flex: 1;
+		}
+
+		.section-title h2 {
+			font-size: 17px;
+			font-weight: 600;
+			margin-bottom: 4px;
+		}
+
+		.section-title p {
+			font-size: 13px;
+			color: var(--text-secondary);
+		}
+
+		/* Website List */
+		.url-list {
+			list-style: none;
+			margin-bottom: 20px;
+		}
+
+		.url-list li {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 14px 16px;
+			background: var(--surface-2);
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			margin-bottom: 10px;
+			transition: all 0.2s;
+		}
+
+		.url-list li:hover {
+			border-color: var(--border-hover);
+		}
+
+		.url-list li:last-child {
+			margin-bottom: 0;
+		}
+
+		.url-text {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			font-size: 14px;
+			color: var(--text);
+		}
+
+		.url-icon {
+			width: 28px;
+			height: 28px;
+			background: var(--surface-3);
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.url-icon svg {
+			width: 14px;
+			height: 14px;
+			color: var(--text-secondary);
+		}
+
+		.url-remove {
+			background: none;
+			border: none;
+			color: var(--text-tertiary);
+			cursor: pointer;
+			padding: 6px;
+			border-radius: 6px;
+			transition: all 0.2s;
+		}
+
+		.url-remove:hover {
+			background: rgba(255, 71, 87, 0.1);
+			color: var(--error);
+		}
+
+		.url-remove svg {
+			width: 16px;
+			height: 16px;
+		}
+
+		/* Add URL Form */
+		.add-url-container {
+			display: flex;
+			gap: 10px;
+		}
+
+		.add-url-input {
+			flex: 1;
+			background: var(--surface-2);
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			padding: 14px 18px;
+			font-size: 14px;
+			color: var(--text);
+			font-family: var(--font-body);
+			outline: none;
+			transition: all 0.2s;
+		}
+
+		.add-url-input::placeholder {
+			color: var(--text-tertiary);
+		}
+
+		.add-url-input:focus {
+			border-color: var(--accent);
+			background: var(--surface-3);
+			box-shadow: 0 0 0 3px var(--accent-dim);
+		}
+
+		.add-url-button {
+			background: var(--accent);
+			color: #000;
+			border: none;
+			border-radius: 12px;
+			padding: 14px 20px;
+			font-size: 14px;
+			font-weight: 600;
+			font-family: var(--font-body);
+			cursor: pointer;
+			transition: all 0.2s;
+			white-space: nowrap;
+		}
+
+		.add-url-button:hover {
+			background: var(--accent-hover);
+			transform: translateY(-1px);
+		}
+
+		.add-url-button.hidden {
+			display: none;
+		}
+
+		.add-url-error {
+			margin-top: 10px;
+			font-size: 13px;
+			color: var(--error);
+		}
+
+		.hint {
+			margin-top: 16px;
+			font-size: 12px;
+			color: var(--text-tertiary);
+			line-height: 1.6;
+		}
+
+		/* Time Settings */
+		.manage-time-toggle {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			cursor: pointer;
+			margin-bottom: 16px;
+		}
+
+		.manage-time-toggle-checkbox {
+			width: 44px;
+			height: 24px;
+			appearance: none;
+			background: var(--surface-3);
+			border-radius: 100px;
+			position: relative;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+
+		.manage-time-toggle-checkbox::before {
+			content: '';
+			position: absolute;
+			width: 18px;
+			height: 18px;
+			background: var(--text-tertiary);
+			border-radius: 50%;
+			top: 3px;
+			left: 3px;
+			transition: all 0.2s;
+		}
+
+		.manage-time-toggle-checkbox:checked {
+			background: var(--accent);
+		}
+
+		.manage-time-toggle-checkbox:checked::before {
+			background: #000;
+			transform: translateX(20px);
+		}
+
+		.toggle-label {
+			font-size: 15px;
+			font-weight: 500;
+			color: var(--text);
+		}
+
+		.time-edit-container {
+			background: var(--surface-2);
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			padding: 20px;
+			margin-top: 16px;
+		}
+
+		.time-edit-container.hidden {
+			display: none;
+		}
+
+		.time-edit-select {
+			display: flex;
+			gap: 16px;
+		}
+
+		.time-edit-select > div {
+			flex: 1;
+		}
+
+		.time-edit-select label {
+			display: block;
+			font-size: 12px;
+			font-weight: 600;
+			color: var(--text-secondary);
+			margin-bottom: 8px;
+			letter-spacing: 0.3px;
+		}
+
+		.time-edit-select select {
+			width: 100%;
+			background: var(--surface-3);
+			border: 1px solid var(--border);
+			border-radius: 10px;
+			padding: 12px 14px;
+			font-size: 14px;
+			color: var(--text);
+			font-family: var(--font-body);
+			cursor: pointer;
+			outline: none;
+			appearance: none;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: right 12px center;
+		}
+
+		.time-edit-select select:focus {
+			border-color: var(--accent);
+		}
+
+		.time-edit-response {
+			margin-top: 12px;
+			font-size: 13px;
+			color: var(--success);
+		}
+
+		.time-edit-change-format-container {
+			margin-top: 16px;
+			padding-top: 16px;
+			border-top: 1px solid var(--border);
+		}
+
+		.time-edit-change-format {
+			background: var(--surface-3);
+			border: 1px solid var(--border);
+			border-radius: 10px;
+			padding: 10px 16px;
+			font-size: 13px;
+			color: var(--text-secondary);
+			font-family: var(--font-body);
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+
+		.time-edit-change-format:hover {
+			background: var(--surface);
+			color: var(--text);
+			border-color: var(--border-hover);
+		}
+
+		/* Empty state */
+		.empty-state {
+			text-align: center;
+			padding: 32px 20px;
+			color: var(--text-secondary);
+		}
+
+		.empty-state svg {
+			width: 48px;
+			height: 48px;
+			margin-bottom: 16px;
+			opacity: 0.3;
+		}
+
+		.empty-state p {
+			font-size: 14px;
+		}
+
+		/* Footer */
+		footer {
+			text-align: center;
+			padding: 24px 0;
+			border-top: 1px solid var(--border);
+			margin-top: 24px;
+		}
+
+		footer p {
+			font-size: 12px;
+			color: var(--text-tertiary);
+		}
+
+		footer a {
+			color: var(--text-secondary);
+			text-decoration: none;
+		}
+
+		footer a:hover {
+			color: var(--accent);
+		}
+
+		/* Separator */
+		.separator {
+			display: block;
+			height: 1px;
+			background: var(--border);
+			margin: 20px 0;
+		}
+
+		/* Responsive */
+		@media (max-width: 640px) {
+			.container {
+				padding: 24px 16px;
+			}
+
+			header {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 20px;
+			}
+
+			section {
+				padding: 20px;
+			}
+
+			.add-url-container {
+				flex-direction: column;
+			}
+
+			.add-url-button {
+				width: 100%;
+			}
+
+			.time-edit-select {
+				flex-direction: column;
+				gap: 12px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<header>
+			<div class="brand">
+				<div class="logo"></div>
+				<div class="brand-text">
+					<h1>Mindlessly</h1>
+					<p>Settings & Preferences</p>
 				</div>
-			</section>
-			<footer></footer>
-		</div>
-	</body>
+			</div>
+		</header>
+
+		<!-- Manage Websites Section -->
+		<section class="manage-websites">
+			<div class="section-header">
+				<div class="section-icon">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="2" y1="12" x2="22" y2="12"></line>
+						<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+					</svg>
+				</div>
+				<div class="section-title">
+					<h2>Tracked Websites</h2>
+					<p>Sites where Mindlessly will prompt you</p>
+				</div>
+			</div>
+
+			<ul class="url-list">
+				<!-- list items with url and remove button / options.js -->
+			</ul>
+
+			<form class="add-url-container">
+				<input
+					class="add-url-input"
+					type="text"
+					autocomplete="off"
+					placeholder="Enter website URL (e.g., twitter.com)"
+				/>
+				<button class="add-url-button hidden" type="submit">
+					Add
+				</button>
+			</form>
+			<p class="add-url-error hint">
+				<!-- URL error message / options.js -->
+			</p>
+			<p class="hint">
+				Tip: Copy and paste the URL from your browser for accuracy.
+			</p>
+		</section>
+
+		<!-- Time Settings Section -->
+		<section class="manage-time">
+			<div class="section-header">
+				<div class="section-icon">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="10"></circle>
+						<polyline points="12 6 12 12 16 14"></polyline>
+					</svg>
+				</div>
+				<div class="section-title">
+					<h2>Active Hours</h2>
+					<p>Only activate during certain times</p>
+				</div>
+			</div>
+
+			<label class="manage-time-toggle">
+				<input class="manage-time-toggle-checkbox" type="checkbox" />
+				<span class="toggle-label">Enable time restrictions</span>
+			</label>
+
+			<div class="time-edit-container hidden">
+				<form class="time-edit-select">
+					<div>
+						<label>FROM</label>
+						<select name="from" id="from"></select>
+					</div>
+					<div>
+						<label>TO</label>
+						<select name="to" id="to"></select>
+					</div>
+				</form>
+				<p class="time-edit-response hint">
+					<!-- displays success message on time change / options.js -->
+				</p>
+				<div class="time-edit-change-format-container">
+					<button type="button" class="time-edit-change-format">
+						<!-- toggle between 12 and 24 hr format / options.js -->
+					</button>
+				</div>
+			</div>
+		</section>
+
+		<footer>
+			<p>Made by <a href="https://www.linkedin.com/in/divy-kairoth/" target="_blank">Divy Kairoth</a></p>
+		</footer>
+	</div>
+
 	<script type="module" src="js/options.js"></script>
-	<script src="js/footer.js"></script>
+</body>
 </html>
