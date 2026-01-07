@@ -2,7 +2,7 @@
 	"name": "Mindlessly",
 	"author": "Divy Kairoth",
 	"manifest_version": 3,
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"description": "Transform mindless browsing into focused sessions. Set intentions, use smart timers, and stay purposeful online.",
 	"short_name": "Mindlessly",
 	"homepage_url": "https://github.com/kairothq/Mindlessly",

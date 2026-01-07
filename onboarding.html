@@ -19,10 +19,15 @@
 				--color-surface: #141414;
 				--color-surface-elevated: #1a1a1a;
 				--color-border: rgba(255, 255, 255, 0.08);
+				--color-border-hover: rgba(255, 255, 255, 0.15);
 				--color-text: #fafafa;
 				--color-text-muted: #888;
+				--color-text-dim: #555;
 				--color-accent: #e8ff47;
+				--color-accent-hover: #f0ff6a;
 				--color-accent-dim: rgba(232, 255, 71, 0.1);
+				--color-success: #2ed573;
+				--color-error: #ff4757;
 				--font-display: 'Playfair Display', Georgia, serif;
 				--font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 			}
@@ -44,155 +49,125 @@
 			body::before {
 				content: '';
 				position: fixed;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
+				inset: 0;
 				background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
 				opacity: 0.02;
 				pointer-events: none;
 				z-index: 0;
 			}
 
-			/* Premium Banner - Sticky & Prominent */
+			/* Premium Timer Banner - Sticky */
 			.premium-banner {
 				background: linear-gradient(135deg, #0f0f0f 0%, #0a0a0a 100%);
 				border-bottom: 1px solid rgba(232, 255, 71, 0.15);
 				padding: 0;
-				position: sticky;
+				position: fixed;
 				top: 0;
+				left: 0;
+				right: 0;
 				z-index: 100;
 				box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 			}
 
 			.premium-banner-inner {
 				background: linear-gradient(90deg, rgba(232, 255, 71, 0.03) 0%, rgba(232, 255, 71, 0.08) 50%, rgba(232, 255, 71, 0.03) 100%);
-				padding: 16px 24px;
+				padding: 12px 24px;
 			}
 
 			.premium-banner-content {
-				max-width: 1000px;
+				max-width: 1200px;
 				margin: 0 auto;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				gap: 20px;
+				gap: 16px;
 				flex-wrap: wrap;
 			}
 
 			.premium-badge {
 				display: inline-flex;
 				align-items: center;
-				gap: 8px;
+				gap: 6px;
 				background: linear-gradient(135deg, #e8ff47 0%, #d4eb3a 100%);
 				color: #000;
-				padding: 6px 14px;
+				padding: 4px 12px;
 				border-radius: 100px;
 				font-size: 11px;
 				font-weight: 800;
-				letter-spacing: 0.8px;
+				letter-spacing: 0.5px;
 				text-transform: uppercase;
-				animation: badgePulse 2s ease-in-out infinite;
-			}
-
-			@keyframes badgePulse {
-				0%, 100% { box-shadow: 0 0 0 0 rgba(232, 255, 71, 0.4); }
-				50% { box-shadow: 0 0 0 8px rgba(232, 255, 71, 0); }
-			}
-
-			.premium-badge svg {
-				width: 12px;
-				height: 12px;
 			}
 
 			.premium-text {
-				font-size: 15px;
+				font-size: 14px;
 				color: var(--color-text);
 				font-weight: 500;
-				text-align: center;
 			}
 
 			.premium-text strong {
 				color: var(--color-accent);
-				font-weight: 700;
 			}
 
-			.premium-text .free-tag {
-				display: inline-block;
-				background: #2ed573;
-				color: #000;
-				padding: 2px 8px;
-				border-radius: 4px;
-				font-size: 12px;
-				font-weight: 700;
-				margin-left: 4px;
-				text-transform: uppercase;
-			}
-
-			.premium-cta {
+			.countdown-timer {
 				display: inline-flex;
 				align-items: center;
 				gap: 8px;
-				background: var(--color-accent);
-				color: #000;
-				padding: 12px 24px;
+				background: var(--color-surface);
+				border: 1px solid var(--color-border);
+				padding: 6px 14px;
 				border-radius: 100px;
 				font-size: 14px;
 				font-weight: 700;
-				text-decoration: none;
-				transition: all 0.3s ease;
-				animation: ctaGlow 2s ease-in-out infinite;
+				color: var(--color-accent);
+				font-variant-numeric: tabular-nums;
 			}
 
-			@keyframes ctaGlow {
-				0%, 100% { box-shadow: 0 4px 20px rgba(232, 255, 71, 0.3); }
-				50% { box-shadow: 0 4px 30px rgba(232, 255, 71, 0.5); }
-			}
-
-			.premium-cta:hover {
-				transform: translateY(-2px) scale(1.05);
-				box-shadow: 0 10px 40px rgba(232, 255, 71, 0.4);
-			}
-
-			.premium-cta svg {
+			.countdown-timer svg {
 				width: 16px;
 				height: 16px;
+				animation: pulse 1s ease-in-out infinite;
 			}
 
-			/* Hero Section */
-			.hero {
-				position: relative;
-				min-height: 75vh;
+			@keyframes pulse {
+				0%, 100% { opacity: 1; }
+				50% { opacity: 0.5; }
+			}
+
+			/* Main Container */
+			.app {
+				min-height: 100vh;
+				padding-top: 60px;
 				display: flex;
 				flex-direction: column;
 				align-items: center;
 				justify-content: center;
-				text-align: center;
-				padding: 60px 24px;
-				overflow: hidden;
+				position: relative;
+				z-index: 1;
 			}
 
 			/* Animated gradient orbs */
-			.hero::before {
+			.app::before {
 				content: '';
-				position: absolute;
+				position: fixed;
 				width: 600px;
 				height: 600px;
 				background: radial-gradient(circle, rgba(232, 255, 71, 0.08) 0%, transparent 70%);
 				top: -200px;
 				right: -200px;
 				animation: float 20s ease-in-out infinite;
+				pointer-events: none;
 			}
 
-			.hero::after {
+			.app::after {
 				content: '';
-				position: absolute;
+				position: fixed;
 				width: 400px;
 				height: 400px;
 				background: radial-gradient(circle, rgba(232, 255, 71, 0.05) 0%, transparent 70%);
 				bottom: -100px;
 				left: -100px;
 				animation: float 15s ease-in-out infinite reverse;
+				pointer-events: none;
 			}
 
 			@keyframes float {
@@ -200,84 +175,761 @@
 				50% { transform: translate(30px, -30px) scale(1.1); }
 			}
 
-			.logo-container {
+			/* Carousel Container */
+			.carousel-container {
+				width: 100%;
+				max-width: 1000px;
+				padding: 60px 24px 40px;
+			}
+
+			/* Progress Bar */
+			.progress-bar {
+				display: flex;
+				gap: 8px;
+				margin-bottom: 50px;
+				justify-content: center;
+			}
+
+			.progress-dot {
+				width: 40px;
+				height: 4px;
+				background: var(--color-surface);
+				border-radius: 2px;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			.progress-dot.active {
+				background: var(--color-accent);
+			}
+
+			.progress-dot.completed {
+				background: rgba(232, 255, 71, 0.4);
+			}
+
+			/* Slide */
+			.slides-wrapper {
 				position: relative;
-				z-index: 1;
+				overflow: hidden;
+			}
+
+			.slide {
+				display: none;
+				animation: fadeIn 0.4s ease-out;
+			}
+
+			.slide.active {
+				display: block;
+			}
+
+			@keyframes fadeIn {
+				from { opacity: 0; transform: translateY(20px); }
+				to { opacity: 1; transform: translateY(0); }
+			}
+
+			.slide-content {
+				text-align: center;
+				max-width: 800px;
+				margin: 0 auto;
+			}
+
+			.slide-icon {
+				font-size: 64px;
+				margin-bottom: 24px;
+				display: block;
+			}
+
+			.slide-number {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				width: 32px;
+				height: 32px;
+				background: var(--color-accent-dim);
+				border: 1px solid rgba(232, 255, 71, 0.3);
+				color: var(--color-accent);
+				font-size: 14px;
+				font-weight: 700;
+				border-radius: 50%;
+				margin-bottom: 16px;
+			}
+
+			.slide-title {
+				font-family: var(--font-display);
+				font-size: clamp(36px, 7vw, 56px);
+				font-weight: 700;
+				letter-spacing: -2px;
+				margin-bottom: 20px;
+				line-height: 1.1;
+			}
+
+			.slide-title span {
+				color: var(--color-accent);
+				background: linear-gradient(135deg, #e8ff47 0%, #d4eb3a 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+			}
+
+			.slide-description {
+				font-size: 17px;
+				color: var(--color-text-muted);
 				margin-bottom: 32px;
+				line-height: 1.7;
 			}
 
-			.logo {
-				width: 80px;
-				height: 80px;
-				background: url('images/icon_128.png') no-repeat center;
-				background-size: contain;
-				border-radius: 20px;
-				box-shadow: 0 20px 60px rgba(232, 255, 71, 0.15);
-				animation: logoGlow 3s ease-in-out infinite;
+			.emphasis-you {
+				font-size: 1.4em;
+				font-weight: 700;
+				color: var(--color-accent);
+				letter-spacing: 1px;
+				text-transform: uppercase;
 			}
 
-			@keyframes logoGlow {
-				0%, 100% { box-shadow: 0 20px 60px rgba(232, 255, 71, 0.15); }
-				50% { box-shadow: 0 20px 80px rgba(232, 255, 71, 0.25); }
+			/* Screenshot/Visual Container */
+			.visual-container {
+				background: var(--color-surface);
+				border: 1px solid var(--color-border);
+				border-radius: 16px;
+				padding: 24px;
+				margin: 24px auto;
+				max-width: 600px;
 			}
 
-			.hero-content {
-				position: relative;
-				z-index: 1;
-				max-width: 700px;
+			.visual-container img {
+				width: 100%;
+				border-radius: 8px;
 			}
 
-			.badge {
+			/* Mock UI for demos */
+			.mock-ui {
+				background: var(--color-bg);
+				border-radius: 12px;
+				padding: 20px;
+				text-align: left;
+			}
+
+			.mock-input {
+				background: var(--color-surface);
+				border: 2px solid var(--color-border);
+				border-radius: 12px;
+				padding: 16px 20px;
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				margin-bottom: 12px;
+			}
+
+			.mock-input-text {
+				color: var(--color-text);
+				font-size: 16px;
+				flex: 1;
+			}
+
+			.mock-input-hint {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				color: var(--color-accent);
+				font-size: 14px;
+				font-weight: 600;
+				background: var(--color-accent-dim);
+				padding: 6px 12px;
+				border-radius: 6px;
+				animation: pulseHint 1.5s ease-in-out infinite;
+			}
+
+			@keyframes pulseHint {
+				0%, 100% { opacity: 1; transform: scale(1); }
+				50% { opacity: 0.8; transform: scale(1.02); }
+			}
+
+			.mock-input-hint kbd {
+				background: var(--color-accent);
+				color: #000;
+				padding: 2px 8px;
+				border-radius: 4px;
+				font-weight: 700;
+				font-size: 12px;
+			}
+
+			/* Popup Mock */
+			.mock-popup {
+				background: var(--color-bg);
+				border: 1px solid var(--color-border);
+				border-radius: 16px;
+				padding: 20px;
+				width: 280px;
+				margin: 0 auto;
+			}
+
+			.mock-popup-header {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				margin-bottom: 16px;
+				padding-bottom: 12px;
+				border-bottom: 1px solid var(--color-border);
+			}
+
+			.mock-popup-logo {
+				width: 32px;
+				height: 32px;
+				background: var(--color-accent-dim);
+				border-radius: 8px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 16px;
+			}
+
+			.mock-popup-title {
+				font-weight: 600;
+				font-size: 14px;
+			}
+
+			.mock-site-card {
+				background: var(--color-surface);
+				border: 1px solid var(--color-border);
+				border-radius: 12px;
+				padding: 14px;
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				margin-bottom: 12px;
+			}
+
+			.mock-site-icon {
+				width: 36px;
+				height: 36px;
+				background: var(--color-surface-elevated);
+				border-radius: 8px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 18px;
+			}
+
+			.mock-site-name {
+				font-weight: 500;
+				font-size: 14px;
+			}
+
+			.mock-site-status {
+				font-size: 12px;
+				color: var(--color-text-muted);
+			}
+
+			.mock-site-status.tracked {
+				color: var(--color-accent);
+			}
+
+			.mock-btn {
+				width: 100%;
+				padding: 12px;
+				border: none;
+				border-radius: 10px;
+				font-size: 14px;
+				font-weight: 600;
+				cursor: default;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 8px;
+			}
+
+			.mock-btn.primary {
+				background: var(--color-accent);
+				color: #000;
+			}
+
+			.mock-btn.danger {
+				background: rgba(255, 71, 87, 0.1);
+				color: var(--color-error);
+				border: 1px solid rgba(255, 71, 87, 0.2);
+			}
+
+			/* Timer Mock */
+			.mock-timer-options {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+				justify-content: center;
+				margin-bottom: 16px;
+			}
+
+			.mock-timer-btn {
+				padding: 10px 18px;
+				background: var(--color-surface);
+				border: 1px solid var(--color-border);
+				border-radius: 10px;
+				color: var(--color-text-muted);
+				font-size: 14px;
+				font-weight: 500;
+			}
+
+			.mock-timer-btn.selected {
+				background: var(--color-accent);
+				color: #000;
+				border-color: var(--color-accent);
+			}
+
+			/* Key instruction highlight */
+			.key-instruction {
 				display: inline-flex;
 				align-items: center;
 				gap: 8px;
 				background: var(--color-accent-dim);
-				border: 1px solid rgba(232, 255, 71, 0.2);
-				color: var(--color-accent);
-				padding: 8px 16px;
-				border-radius: 100px;
-				font-size: 13px;
-				font-weight: 600;
-				letter-spacing: 0.5px;
-				text-transform: uppercase;
-				margin-bottom: 24px;
-				animation: fadeInUp 0.6s ease-out;
+				border: 1px solid rgba(232, 255, 71, 0.3);
+				padding: 12px 20px;
+				border-radius: 12px;
+				margin: 16px 0;
 			}
 
-			.badge::before {
-				content: '';
-				width: 8px;
-				height: 8px;
+			.key-instruction kbd {
 				background: var(--color-accent);
-				border-radius: 50%;
-				animation: pulse 2s ease-in-out infinite;
-			}
-
-			@keyframes pulse {
-				0%, 100% { opacity: 1; transform: scale(1); }
-				50% { opacity: 0.5; transform: scale(0.8); }
-			}
-
-			h1 {
-				font-family: var(--font-display);
-				font-size: clamp(48px, 8vw, 72px);
+				color: #000;
+				padding: 4px 12px;
+				border-radius: 6px;
 				font-weight: 700;
-				letter-spacing: -2px;
-				line-height: 1.1;
-				margin-bottom: 24px;
-				animation: fadeInUp 0.6s ease-out 0.1s backwards;
+				font-size: 14px;
 			}
 
-			h1 span {
+			.key-instruction span {
+				color: var(--color-text);
+				font-weight: 500;
+			}
+
+			/* Navigation */
+			.nav-buttons {
+				display: flex;
+				gap: 16px;
+				justify-content: center;
+				margin-top: 40px;
+			}
+
+			.nav-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 10px;
+				padding: 14px 28px;
+				border-radius: 100px;
+				font-size: 15px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all 0.2s ease;
+				border: none;
+				font-family: var(--font-body);
+			}
+
+			.nav-btn.primary {
+				background: var(--color-accent);
+				color: #000;
+			}
+
+			.nav-btn.primary:hover {
+				background: var(--color-accent-hover);
+				transform: translateY(-2px);
+				box-shadow: 0 8px 30px rgba(232, 255, 71, 0.25);
+			}
+
+			.nav-btn.secondary {
+				background: var(--color-surface);
+				color: var(--color-text);
+				border: 1px solid var(--color-border);
+			}
+
+			.nav-btn.secondary:hover {
+				background: var(--color-surface-elevated);
+				border-color: var(--color-border-hover);
+			}
+
+			.nav-btn svg {
+				width: 18px;
+				height: 18px;
+			}
+
+			/* Premium Slide Special Styling */
+			.premium-card {
+				background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%);
+				border: 2px solid rgba(232, 255, 71, 0.2);
+				border-radius: 24px;
+				padding: 40px;
+				margin: 24px auto;
+				max-width: 500px;
+				position: relative;
+				overflow: hidden;
+			}
+
+			.premium-card::before {
+				content: '';
+				position: absolute;
+				top: -50%;
+				right: -50%;
+				width: 100%;
+				height: 100%;
+				background: radial-gradient(circle, rgba(232, 255, 71, 0.1) 0%, transparent 70%);
+				pointer-events: none;
+			}
+
+			.premium-card-content {
+				position: relative;
+				z-index: 1;
+			}
+
+			.premium-icon {
+				font-size: 48px;
+				margin-bottom: 20px;
+			}
+
+			.premium-title {
+				font-family: var(--font-display);
+				font-size: 28px;
+				font-weight: 700;
+				margin-bottom: 12px;
+			}
+
+			.premium-subtitle {
+				color: var(--color-text-muted);
+				font-size: 16px;
+				margin-bottom: 24px;
+			}
+
+			.premium-features {
+				text-align: left;
+				margin-bottom: 24px;
+			}
+
+			.premium-feature {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				padding: 10px 0;
+				color: var(--color-text);
+				font-size: 15px;
+			}
+
+			.premium-feature svg {
+				width: 20px;
+				height: 20px;
+				color: var(--color-success);
+				flex-shrink: 0;
+			}
+
+			.premium-cta {
+				display: inline-flex;
+				align-items: center;
+				gap: 10px;
+				background: var(--color-accent);
+				color: #000;
+				padding: 16px 32px;
+				border-radius: 100px;
+				font-size: 16px;
+				font-weight: 700;
+				text-decoration: none;
+				transition: all 0.3s ease;
+			}
+
+			.premium-cta:hover {
+				transform: translateY(-3px);
+				box-shadow: 0 15px 40px rgba(232, 255, 71, 0.3);
+			}
+
+			.premium-cta svg {
+				width: 20px;
+				height: 20px;
+			}
+
+			.premium-timer-note {
+				margin-top: 16px;
+				font-size: 13px;
+				color: var(--color-text-dim);
+			}
+
+			.premium-cta-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 10px;
+				background: var(--color-accent);
+				color: #000;
+				padding: 16px 32px;
+				border-radius: 100px;
+				font-size: 16px;
+				font-weight: 700;
+				text-decoration: none;
+				transition: all 0.3s ease;
+			}
+
+			.premium-cta-btn:hover {
+				transform: translateY(-3px);
+				box-shadow: 0 15px 40px rgba(232, 255, 71, 0.3);
+			}
+
+			.premium-cta-btn svg {
+				width: 20px;
+				height: 20px;
+			}
+
+			/* Video Guide Link */
+			.video-guide {
+				margin-bottom: 24px;
+			}
+
+			.video-link {
+				display: flex;
+				align-items: center;
+				gap: 16px;
+				background: linear-gradient(135deg, rgba(225, 48, 108, 0.1) 0%, rgba(131, 58, 180, 0.1) 100%);
+				border: 1px solid rgba(225, 48, 108, 0.2);
+				padding: 16px 20px;
+				border-radius: 16px;
+				text-decoration: none;
+				transition: all 0.3s ease;
+				max-width: 400px;
+				margin: 0 auto;
+			}
+
+			.video-link:hover {
+				background: linear-gradient(135deg, rgba(225, 48, 108, 0.15) 0%, rgba(131, 58, 180, 0.15) 100%);
+				border-color: rgba(225, 48, 108, 0.4);
+				transform: translateY(-2px);
+			}
+
+			.video-icon {
+				width: 48px;
+				height: 48px;
+				background: linear-gradient(135deg, #E1306C 0%, #833AB4 100%);
+				border-radius: 12px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+			}
+
+			.video-icon svg {
+				width: 20px;
+				height: 20px;
+				color: #fff;
+				margin-left: 2px;
+			}
+
+			.video-text {
+				flex: 1;
+				text-align: left;
+			}
+
+			.video-label {
+				display: block;
+				font-weight: 600;
+				font-size: 15px;
+				color: var(--color-text);
+				margin-bottom: 2px;
+			}
+
+			.video-desc {
+				display: block;
+				font-size: 13px;
+				color: var(--color-text-muted);
+			}
+
+			.video-arrow {
+				width: 20px;
+				height: 20px;
+				color: var(--color-text-muted);
+				flex-shrink: 0;
+			}
+
+			/* Video Guide Alt - Coherent Lime/Accent Colors */
+			.video-guide-alt {
+				margin-bottom: 24px;
+			}
+
+			.video-link-alt {
+				display: flex;
+				align-items: center;
+				gap: 16px;
+				background: linear-gradient(135deg, rgba(232, 255, 71, 0.08) 0%, rgba(232, 255, 71, 0.04) 100%);
+				border: 1px solid rgba(232, 255, 71, 0.2);
+				padding: 16px 20px;
+				border-radius: 16px;
+				text-decoration: none;
+				transition: all 0.3s ease;
+				max-width: 400px;
+				margin: 0 auto;
+			}
+
+			.video-link-alt:hover {
+				background: linear-gradient(135deg, rgba(232, 255, 71, 0.12) 0%, rgba(232, 255, 71, 0.08) 100%);
+				border-color: rgba(232, 255, 71, 0.4);
+				transform: translateY(-2px);
+			}
+
+			.video-icon-alt {
+				width: 48px;
+				height: 48px;
+				background: linear-gradient(135deg, #e8ff47 0%, #d4eb3a 100%);
+				border-radius: 12px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+			}
+
+			.video-icon-alt svg {
+				width: 20px;
+				height: 20px;
+				color: #000;
+				margin-left: 2px;
+			}
+
+			/* Footer */
+			.footer {
+				text-align: center;
+				padding: 32px 24px;
+				border-top: 1px solid var(--color-border);
+				margin-top: auto;
+			}
+
+			.footer-links {
+				display: flex;
+				gap: 24px;
+				justify-content: center;
+				flex-wrap: wrap;
+			}
+
+			.footer-links a {
+				color: var(--color-text-muted);
+				font-size: 13px;
+				text-decoration: none;
+				transition: color 0.2s ease;
+			}
+
+			.footer-links a:hover {
 				color: var(--color-accent);
 			}
 
-			.hero-text {
-				font-size: 18px;
+			/* Arrow indicator for visual */
+			.arrow-indicator {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				color: var(--color-accent);
+				font-size: 14px;
+				font-weight: 600;
+				margin-top: 12px;
+				justify-content: center;
+			}
+
+			.arrow-indicator svg {
+				width: 20px;
+				height: 20px;
+				animation: bounce 1s ease-in-out infinite;
+			}
+
+			@keyframes bounce {
+				0%, 100% { transform: translateX(0); }
+				50% { transform: translateX(5px); }
+			}
+
+			/* Logo container with seamless ambient glow */
+			.logo-container {
+				margin-bottom: 32px;
+				position: relative;
+				display: inline-block;
+			}
+
+			/* Soft ambient glow behind logo - creates seamless transition */
+			.logo-container::before {
+				content: '';
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				width: 280px;
+				height: 280px;
+				background: radial-gradient(
+					ellipse at center,
+					rgba(232, 255, 71, 0.12) 0%,
+					rgba(232, 255, 71, 0.06) 30%,
+					rgba(232, 255, 71, 0.02) 50%,
+					transparent 70%
+				);
+				transform: translate(-50%, -50%);
+				pointer-events: none;
+				animation: ambientPulse 4s ease-in-out infinite;
+				z-index: -1;
+			}
+
+			@keyframes ambientPulse {
+				0%, 100% {
+					opacity: 0.8;
+					transform: translate(-50%, -50%) scale(1);
+				}
+				50% {
+					opacity: 1;
+					transform: translate(-50%, -50%) scale(1.1);
+				}
+			}
+
+			.onboarding-logo {
+				width: 88px;
+				height: 88px;
+				border-radius: 22px;
+				box-shadow:
+					0 8px 32px rgba(232, 255, 71, 0.15),
+					0 2px 8px rgba(0, 0, 0, 0.3);
+				object-fit: contain;
+				position: relative;
+				z-index: 1;
+			}
+
+			/* Preconfigured sites */
+			.preconfigured-sites {
+				margin: 32px 0;
+				animation: fadeInUp 0.6s ease-out 0.3s backwards;
+			}
+
+			.sites-label {
+				font-size: 14px;
 				color: var(--color-text-muted);
-				max-width: 540px;
-				margin: 0 auto 40px;
-				animation: fadeInUp 0.6s ease-out 0.2s backwards;
+				margin-bottom: 16px;
+			}
+
+			.site-badges {
+				display: flex;
+				gap: 12px;
+				justify-content: center;
+				flex-wrap: wrap;
+			}
+
+			.site-badge {
+				display: inline-flex;
+				align-items: center;
+				gap: 10px;
+				background: var(--color-surface);
+				border: 1px solid var(--color-border);
+				padding: 12px 20px;
+				border-radius: 100px;
+				font-size: 14px;
+				font-weight: 500;
+				color: var(--color-text);
+				text-decoration: none;
+				transition: all 0.2s ease;
+			}
+
+			.site-badge:hover {
+				background: var(--color-surface-elevated);
+				border-color: var(--color-accent);
+				transform: translateY(-2px);
+			}
+
+			.site-badge svg {
+				width: 18px;
+				height: 18px;
+				opacity: 0.8;
+			}
+
+			.site-badge:hover svg {
+				opacity: 1;
 			}
 
 			@keyframes fadeInUp {
@@ -291,366 +943,625 @@
 				}
 			}
 
-			/* Quick Start Section */
-			.quick-start {
+			/* Screen time stat */
+			.screentime-stat {
 				display: flex;
-				flex-wrap: wrap;
-				gap: 12px;
-				justify-content: center;
-				margin-bottom: 48px;
-				animation: fadeInUp 0.6s ease-out 0.3s backwards;
-			}
-
-			.site-link {
-				display: inline-flex;
 				align-items: center;
-				gap: 8px;
-				background: var(--color-surface);
-				border: 1px solid var(--color-border);
-				color: var(--color-text);
-				padding: 12px 20px;
-				border-radius: 100px;
-				font-size: 14px;
-				font-weight: 500;
-				text-decoration: none;
-				transition: all 0.2s ease;
-			}
-
-			.site-link:hover {
-				background: var(--color-surface-elevated);
-				border-color: var(--color-accent);
-				transform: translateY(-2px);
-			}
-
-			.site-link svg {
-				width: 18px;
-				height: 18px;
-				opacity: 0.7;
-			}
-
-			.cta-button {
-				display: inline-flex;
-				align-items: center;
-				gap: 10px;
-				background: var(--color-accent);
-				color: #000;
-				padding: 16px 32px;
-				border-radius: 100px;
-				font-size: 16px;
-				font-weight: 600;
-				text-decoration: none;
-				transition: all 0.3s ease;
+				gap: 16px;
+				background: linear-gradient(135deg, rgba(255, 71, 87, 0.08) 0%, rgba(255, 71, 87, 0.04) 100%);
+				border: 1px solid rgba(255, 71, 87, 0.2);
+				padding: 20px 28px;
+				border-radius: 16px;
+				margin: 28px auto;
+				max-width: 620px;
 				animation: fadeInUp 0.6s ease-out 0.4s backwards;
 			}
 
-			.cta-button:hover {
-				transform: translateY(-3px) scale(1.02);
-				box-shadow: 0 20px 40px rgba(232, 255, 71, 0.3);
-			}
-
-			.cta-button svg {
-				width: 20px;
-				height: 20px;
-			}
-
-			/* Steps Section */
-			.container {
-				max-width: 900px;
-				margin: 0 auto;
-				padding: 0 24px 80px;
-				position: relative;
-				z-index: 1;
-			}
-
-			.section-header {
-				text-align: center;
-				margin-bottom: 60px;
-			}
-
-			.section-header h2 {
-				font-family: var(--font-display);
-				font-size: 36px;
-				font-weight: 600;
-				letter-spacing: -1px;
-				margin-bottom: 16px;
-			}
-
-			.section-header p {
-				color: var(--color-text-muted);
-				font-size: 16px;
-			}
-
-			.steps-grid {
-				display: grid;
-				gap: 24px;
-			}
-
-			.step {
-				background: var(--color-surface);
-				border: 1px solid var(--color-border);
-				border-radius: 20px;
-				padding: 32px;
-				position: relative;
-				overflow: hidden;
-				transition: all 0.3s ease;
-			}
-
-			.step:hover {
-				border-color: rgba(232, 255, 71, 0.3);
-				transform: translateY(-4px);
-			}
-
-			.step::before {
-				content: '';
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 4px;
-				height: 100%;
-				background: linear-gradient(180deg, var(--color-accent) 0%, transparent 100%);
-				opacity: 0;
-				transition: opacity 0.3s ease;
-			}
-
-			.step:hover::before {
-				opacity: 1;
-			}
-
-			.step-number {
-				display: inline-flex;
+			.stat-icon {
+				width: 48px;
+				height: 48px;
+				background: rgba(255, 71, 87, 0.15);
+				border-radius: 12px;
+				display: flex;
 				align-items: center;
 				justify-content: center;
-				width: 36px;
-				height: 36px;
-				background: var(--color-accent-dim);
-				border: 1px solid rgba(232, 255, 71, 0.2);
-				color: var(--color-accent);
-				font-size: 14px;
-				font-weight: 700;
-				border-radius: 10px;
-				margin-bottom: 20px;
+				flex-shrink: 0;
 			}
 
-			.step h3 {
-				font-size: 20px;
+			.stat-icon svg {
+				width: 24px;
+				height: 24px;
+				color: #ff4757;
+			}
+
+			.stat-text {
+				font-size: 15px;
+				color: var(--color-text);
+				text-align: left;
+				line-height: 1.6;
+			}
+
+			.stat-text strong {
+				color: #ff4757;
 				font-weight: 600;
+			}
+
+			/* Browser toolbar mock */
+			.mock-browser-toolbar {
+				background: #1a1a1a;
+				border-radius: 12px;
+				padding: 16px;
+			}
+
+			.mock-toolbar-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
 				margin-bottom: 12px;
+				padding-bottom: 12px;
+				border-bottom: 1px solid var(--color-border);
+			}
+
+			.toolbar-label {
+				font-size: 12px;
+				color: var(--color-text-muted);
+				font-weight: 500;
+			}
+
+			.mock-toolbar-icons {
+				display: flex;
+				gap: 8px;
+			}
+
+			.mock-icon {
+				width: 24px;
+				height: 24px;
+				background: var(--color-surface);
+				border-radius: 4px;
+			}
+
+			.mock-icon.puzzle-icon {
+				background: var(--color-accent);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+			}
+
+			.mock-icon.puzzle-icon.highlighted {
+				animation: pulseHighlight 1.5s ease-in-out infinite;
+			}
+
+			@keyframes pulseHighlight {
+				0%, 100% { box-shadow: 0 0 0 0 rgba(232, 255, 71, 0.4); }
+				50% { box-shadow: 0 0 0 6px rgba(232, 255, 71, 0); }
+			}
+
+			.mock-icon.puzzle-icon svg {
+				width: 14px;
+				height: 14px;
+				color: #000;
+			}
+
+			.mock-extension-dropdown {
+				background: var(--color-surface);
+				border: 1px solid var(--color-border);
+				border-radius: 12px;
+				padding: 12px;
+				max-width: 280px;
+				margin-left: auto;
+			}
+
+			.mock-dropdown-header {
+				font-size: 13px;
+				font-weight: 600;
+				color: var(--color-text);
+				padding-bottom: 12px;
+				border-bottom: 1px solid var(--color-border);
+				margin-bottom: 12px;
+			}
+
+			.mock-extension-item {
 				display: flex;
 				align-items: center;
 				gap: 12px;
+				padding: 10px 12px;
+				border-radius: 8px;
+				background: var(--color-bg);
 			}
 
-			.step h3 .emoji {
-				font-size: 24px;
+			.mock-extension-item.highlighted-item {
+				border: 1px solid rgba(232, 255, 71, 0.3);
+				background: rgba(232, 255, 71, 0.05);
 			}
 
-			.step p {
-				color: var(--color-text-muted);
-				font-size: 15px;
-				line-height: 1.7;
+			.mock-ext-icon {
+				width: 28px;
+				height: 28px;
+				border-radius: 6px;
+				object-fit: contain;
+				flex-shrink: 0;
 			}
 
-			.step code {
-				background: rgba(232, 255, 71, 0.1);
-				color: var(--color-accent);
-				padding: 2px 8px;
-				border-radius: 4px;
-				font-family: 'SF Mono', Menlo, monospace;
-				font-size: 13px;
-			}
-
-			/* Footer */
-			.footer {
-				text-align: center;
-				padding: 40px 24px;
-				border-top: 1px solid var(--color-border);
-				position: relative;
-				z-index: 1;
-			}
-
-			.footer-links {
-				display: flex;
-				gap: 24px;
-				justify-content: center;
-				flex-wrap: wrap;
-			}
-
-			.footer-links a {
-				color: var(--color-text-muted);
+			.mock-ext-name {
+				flex: 1;
 				font-size: 14px;
-				text-decoration: none;
-				transition: color 0.2s ease;
+				font-weight: 500;
 			}
 
-			.footer-links a:hover {
-				color: var(--color-accent);
+			.mock-pin-btn {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				background: var(--color-accent);
+				border-radius: 6px;
+				padding: 6px 10px;
+				cursor: pointer;
+				animation: pulseHighlight 1.5s ease-in-out infinite;
 			}
 
-			.footer-credit {
-				margin-top: 24px;
-				color: var(--color-text-muted);
-				font-size: 13px;
+			.mock-pin-btn svg {
+				width: 14px;
+				height: 14px;
+				color: #000;
 			}
 
-			.footer-credit a {
-				color: var(--color-text);
-				text-decoration: none;
-			}
-
-			.footer-credit a:hover {
-				color: var(--color-accent);
+			.pin-label {
+				font-size: 12px;
+				font-weight: 600;
+				color: #000;
 			}
 
 			/* Responsive */
 			@media (max-width: 640px) {
 				.premium-banner-content {
 					flex-direction: column;
+					gap: 8px;
 					text-align: center;
-					gap: 12px;
 				}
 
-				.hero {
-					min-height: auto;
-					padding: 48px 20px;
-				}
-
-				h1 {
-					letter-spacing: -1px;
-				}
-
-				.quick-start {
+				.site-badges {
 					gap: 8px;
 				}
 
-				.site-link {
-					padding: 10px 16px;
+				.site-badge {
+					padding: 8px 12px;
 					font-size: 13px;
 				}
 
-				.step {
+				.screentime-stat {
+					flex-direction: column;
+					text-align: center;
+					padding: 16px;
+				}
+
+				.stat-text {
+					text-align: center;
+				}
+
+				.mock-extension-dropdown {
+					max-width: 100%;
+				}
+
+				.carousel-container {
+					padding: 24px 16px;
+				}
+
+				.slide-title {
+					font-size: 28px;
+				}
+
+				.visual-container {
+					padding: 16px;
+				}
+
+				.mock-popup {
+					width: 100%;
+				}
+
+				.nav-buttons {
+					flex-direction: column;
+				}
+
+				.nav-btn {
+					width: 100%;
+					justify-content: center;
+				}
+
+				.premium-card {
 					padding: 24px;
 				}
 			}
 		</style>
 	</head>
 	<body>
-		<!-- Premium Lifetime Offer Banner - Sticky -->
+		<!-- Premium Timer Banner -->
 		<div class="premium-banner">
 			<div class="premium-banner-inner">
 				<div class="premium-banner-content">
-					<div class="premium-badge">
-						<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-						Early Access
+					<div class="premium-badge">Early Access</div>
+					<span class="premium-text">First 1,000 users get <strong>1 Year Premium FREE</strong></span>
+					<div class="countdown-timer" id="countdownTimer">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+						<span id="timerDisplay">60:00</span>
 					</div>
-					<span class="premium-text">You're one of our first 1,000 users! Get <strong>Lifetime Premium</strong><span class="free-tag">Free</span></span>
-					<a href="https://binary.so/NErx71M" target="_blank" class="premium-cta">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-						Claim Free Access
-					</a>
 				</div>
 			</div>
 		</div>
 
-		<section class="hero">
-			<div class="logo-container">
-				<div class="logo"></div>
+		<div class="app">
+			<div class="carousel-container">
+				<!-- Progress Bar -->
+				<div class="progress-bar" id="progressBar">
+					<div class="progress-dot active" data-slide="0"></div>
+					<div class="progress-dot" data-slide="1"></div>
+					<div class="progress-dot" data-slide="2"></div>
+					<div class="progress-dot" data-slide="3"></div>
+					<div class="progress-dot" data-slide="4"></div>
+					<div class="progress-dot" data-slide="5"></div>
+					<div class="progress-dot" data-slide="6"></div>
+				</div>
+
+				<!-- Slides -->
+				<div class="slides-wrapper">
+					<!-- Slide 1: Welcome -->
+					<div class="slide active" data-slide="0">
+						<div class="slide-content">
+							<div class="logo-container">
+								<img src="images/icon_128.png" alt="Mindlessly" class="onboarding-logo">
+							</div>
+							<h1 class="slide-title">Browse with <span>Intention</span></h1>
+							<p class="slide-description">
+								I used to open Instagram or YouTube, and within minutes, completely forget why I was there.
+								After constantly falling into this trap and losing hours every day, I built Mindlessly to help myself and now <span class="emphasis-you">YOU</span>.
+							</p>
+
+							<div class="preconfigured-sites">
+								<p class="sites-label">Already configured for you:</p>
+								<div class="site-badges">
+									<a href="https://www.youtube.com" target="_blank" class="site-badge">
+										<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+										<span>YouTube</span>
+									</a>
+									<a href="https://www.instagram.com" target="_blank" class="site-badge">
+										<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+										<span>Instagram</span>
+									</a>
+									<a href="https://twitter.com" target="_blank" class="site-badge">
+										<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+										<span>Twitter / X</span>
+									</a>
+									<a href="https://www.facebook.com" target="_blank" class="site-badge">
+										<svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+										<span>Facebook</span>
+									</a>
+								</div>
+							</div>
+
+							<div class="screentime-stat">
+								<div class="stat-icon">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M3 3v18h18"/>
+										<path d="M18 17V9"/>
+										<path d="M13 17V5"/>
+										<path d="M8 17v-3"/>
+									</svg>
+								</div>
+								<div class="stat-text">
+									<strong>Reality check:</strong> The average person spends 2+ hours daily on social media. That's 30+ days per year lost to mindless scrolling.
+								</div>
+							</div>
+
+							<div class="nav-buttons">
+								<button class="nav-btn primary nav-btn-next">
+									Take Back Control
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Slide 2: Pin Extension -->
+					<div class="slide" data-slide="1">
+						<div class="slide-content">
+							<div class="slide-number">1</div>
+							<h2 class="slide-title">Pin the <span>Extension</span></h2>
+							<p class="slide-description">
+								First, pin Mindlessly to your browser toolbar for quick access. Look for the puzzle icon in the <strong>top-right corner</strong> of your browser.
+							</p>
+
+							<div class="video-guide-alt">
+								<a href="https://www.instagram.com/reel/DQg5rnqAaMn/" target="_blank" class="video-link-alt">
+									<div class="video-icon-alt">
+										<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+									</div>
+									<div class="video-text">
+										<span class="video-label">Watch Video Guide</span>
+										<span class="video-desc">Quick walkthrough on how to use Mindlessly</span>
+									</div>
+									<svg class="video-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+								</a>
+							</div>
+
+							<div class="visual-container">
+								<div class="mock-browser-toolbar">
+									<div class="mock-toolbar-header">
+										<span class="toolbar-label">Browser toolbar (top-right)</span>
+										<div class="mock-toolbar-icons">
+											<div class="mock-icon"></div>
+											<div class="mock-icon"></div>
+											<div class="mock-icon puzzle-icon highlighted">
+												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.315 8.685a.98.98 0 0 1 .837-.276c.47.07.802.48.968.925a2.501 2.501 0 1 0 3.214-3.214c-.446-.166-.855-.497-.925-.968a.979.979 0 0 1 .276-.837l1.61-1.61a2.404 2.404 0 0 1 1.705-.707c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z"/></svg>
+											</div>
+										</div>
+									</div>
+									<div class="mock-extension-dropdown">
+										<div class="mock-dropdown-header">Extensions</div>
+										<div class="mock-extension-item highlighted-item">
+											<img src="images/icon_32.png" alt="" class="mock-ext-icon">
+											<span class="mock-ext-name">Mindlessly</span>
+											<div class="mock-pin-btn">
+												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4.76Z"/></svg>
+												<span class="pin-label">Pin</span>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="arrow-indicator">
+									<span>Click puzzle icon → Find "Mindlessly" → Click Pin button</span>
+								</div>
+							</div>
+
+							<div class="nav-buttons">
+								<button class="nav-btn secondary nav-btn-prev">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+									Back
+								</button>
+								<button class="nav-btn primary nav-btn-next">
+									Next
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Slide 3: Intention Prompt -->
+					<div class="slide" data-slide="2">
+						<div class="slide-content">
+							<div class="slide-number">2</div>
+							<h2 class="slide-title">Set Your <span>Intention</span></h2>
+							<p class="slide-description">
+								When you visit tracked sites (YouTube, Instagram, etc.), you'll see a prompt asking "What's your purpose here?"
+							</p>
+
+							<div class="visual-container">
+								<div class="mock-ui">
+									<div class="mock-input">
+										<span class="mock-input-text">Watch a coding tutorial</span>
+										<div class="mock-input-hint">
+											Press <kbd>Tab</kbd>
+										</div>
+									</div>
+								</div>
+								<div class="arrow-indicator">
+									<span>Type your intention, then press Tab</span>
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+								</div>
+							</div>
+
+							<div class="key-instruction">
+								<span>Important:</span>
+								<kbd>Tab</kbd>
+								<span>to continue (not Enter)</span>
+							</div>
+
+							<div class="nav-buttons">
+								<button class="nav-btn secondary nav-btn-prev">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+									Back
+								</button>
+								<button class="nav-btn primary nav-btn-next">
+									Next
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Slide 4: Timer Selection -->
+					<div class="slide" data-slide="3">
+						<div class="slide-content">
+							<div class="slide-number">3</div>
+							<h2 class="slide-title">Choose Your <span>Timer</span></h2>
+							<p class="slide-description">
+								After setting your intention, select how long you want to browse. Pick a preset or set a custom duration.
+							</p>
+
+							<div class="visual-container">
+								<div class="mock-ui">
+									<div class="mock-timer-options">
+										<div class="mock-timer-btn">No timer</div>
+										<div class="mock-timer-btn">1 min</div>
+										<div class="mock-timer-btn selected">10 min</div>
+										<div class="mock-timer-btn">Custom</div>
+									</div>
+									<div class="mock-btn primary">Start Timer</div>
+								</div>
+								<div class="arrow-indicator">
+									<span>Select duration & start your focused session</span>
+								</div>
+							</div>
+
+							<div class="nav-buttons">
+								<button class="nav-btn secondary nav-btn-prev">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+									Back
+								</button>
+								<button class="nav-btn primary nav-btn-next">
+									Next
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Slide 5: Add Websites -->
+					<div class="slide" data-slide="4">
+						<div class="slide-content">
+							<div class="slide-number">4</div>
+							<h2 class="slide-title">Add <span>Websites</span></h2>
+							<p class="slide-description">
+								Click the Mindlessly icon in your browser toolbar to add any website you want to browse mindfully.
+							</p>
+
+							<div class="visual-container">
+								<div class="mock-popup">
+									<div class="mock-popup-header">
+										<div class="mock-popup-logo">🎯</div>
+										<span class="mock-popup-title">Mindlessly</span>
+									</div>
+									<div class="mock-site-card">
+										<div class="mock-site-icon">🌐</div>
+										<div>
+											<div class="mock-site-name">twitter.com</div>
+											<div class="mock-site-status">Not tracked yet</div>
+										</div>
+									</div>
+									<div class="mock-btn primary">
+										<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+										Add to Mindlessly
+									</div>
+								</div>
+								<div class="arrow-indicator">
+									<span>Click extension icon → Add website</span>
+								</div>
+							</div>
+
+							<div class="nav-buttons">
+								<button class="nav-btn secondary nav-btn-prev">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+									Back
+								</button>
+								<button class="nav-btn primary nav-btn-next">
+									Next
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Slide 6: Remove Websites -->
+					<div class="slide" data-slide="5">
+						<div class="slide-content">
+							<div class="slide-number">5</div>
+							<h2 class="slide-title">Remove <span>Websites</span></h2>
+							<p class="slide-description">
+								Already tracking a site and want to remove it? Just click the extension icon on that site and remove it.
+							</p>
+
+							<div class="visual-container">
+								<div class="mock-popup">
+									<div class="mock-popup-header">
+										<div class="mock-popup-logo">🎯</div>
+										<span class="mock-popup-title">Mindlessly</span>
+									</div>
+									<div class="mock-site-card">
+										<div class="mock-site-icon" style="background: var(--color-accent-dim);">✓</div>
+										<div>
+											<div class="mock-site-name">youtube.com</div>
+											<div class="mock-site-status tracked">Currently tracked</div>
+										</div>
+									</div>
+									<div class="mock-btn danger">
+										<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+										Remove from tracking
+									</div>
+								</div>
+								<div class="arrow-indicator">
+									<span>Click extension icon → Remove website</span>
+								</div>
+							</div>
+
+							<div class="nav-buttons">
+								<button class="nav-btn secondary nav-btn-prev">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+									Back
+								</button>
+								<button class="nav-btn primary nav-btn-next">
+									Next
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Slide 7: Premium Offer -->
+					<div class="slide" data-slide="6">
+						<div class="slide-content">
+							<span class="slide-icon">🎉</span>
+							<h2 class="slide-title">You're All Set!</h2>
+							<p class="slide-description">
+								YouTube, Instagram, Twitter, and Facebook are already configured. Start browsing to see Mindlessly in action!
+							</p>
+
+							<div class="premium-card">
+								<div class="premium-card-content">
+									<div class="premium-icon">⭐</div>
+									<h3 class="premium-title">Claim Your Free Premium</h3>
+									<p class="premium-subtitle">As one of our first 1,000 users, you get 1 year of Premium absolutely free!</p>
+
+									<div class="premium-features">
+										<div class="premium-feature">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+											<span>Unlimited website tracking</span>
+										</div>
+										<div class="premium-feature">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+											<span>Advanced analytics & insights</span>
+										</div>
+										<div class="premium-feature">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+											<span>Priority support access</span>
+										</div>
+									</div>
+
+									<a href="https://binary.so/NErx71M" target="_blank" class="premium-cta-btn">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+										Claim Free Premium
+									</a>
+
+									<p class="premium-timer-note">Offer expires when timer runs out</p>
+								</div>
+							</div>
+
+							<div class="nav-buttons">
+								<button class="nav-btn secondary nav-btn-prev">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+									Back
+								</button>
+								<a href="https://www.youtube.com" target="_blank" class="nav-btn primary">
+									Try on YouTube
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
-			<div class="hero-content">
-				<div class="badge">Installed Successfully</div>
-				<h1>Start browsing with <span>intention</span></h1>
-				<p class="hero-text">
-					Transform mindless scrolling into focused, productive sessions.
-					Set intentions, use smart timers, and browse with purpose.
-				</p>
 
-				<div class="quick-start">
-					<a href="https://www.youtube.com" target="_blank" class="site-link">
-						<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-						YouTube
-					</a>
-					<a href="https://www.instagram.com" target="_blank" class="site-link">
-						<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-						Instagram
-					</a>
-					<a href="https://twitter.com" target="_blank" class="site-link">
-						<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-						Twitter / X
-					</a>
-					<a href="https://www.facebook.com" target="_blank" class="site-link">
-						<svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-						Facebook
-					</a>
+			<!-- Footer -->
+			<footer class="footer">
+				<div class="footer-links">
+					<a href="https://www.linkedin.com/in/divy-kairoth/" target="_blank">Connect on LinkedIn</a>
+					<a href="https://github.com/kairothq/Mindlessly" target="_blank">View on GitHub</a>
+					<a href="mailto:divykairoth@gmail.com?subject=Mindlessly%20Ticket">Get Support</a>
 				</div>
-
-				<a href="https://www.youtube.com" target="_blank" class="cta-button">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-					Try it now on YouTube
-				</a>
-			</div>
-		</section>
-
-		<div class="container">
-			<div class="section-header">
-				<h2>How it works</h2>
-				<p>Four simple steps to mindful browsing</p>
-			</div>
-
-			<div class="steps-grid">
-				<div class="step">
-					<div class="step-number">1</div>
-					<h3><span class="emoji">🎯</span> Add websites</h3>
-					<p>
-						Visit any website you want to browse mindfully, click the
-						<code>Mindlessly</code> extension icon in your toolbar,
-						and click "Add [website]". We've already added YouTube, Instagram,
-						Twitter, and Facebook for you.
-					</p>
-				</div>
-
-				<div class="step">
-					<div class="step-number">2</div>
-					<h3><span class="emoji">💭</span> Set your purpose</h3>
-					<p>
-						When you visit tracked websites, you'll see a prompt asking
-						"What's your purpose here?". Take a moment to write down why
-						you're visiting — this simple act creates mindful awareness
-						and reduces mindless scrolling.
-					</p>
-				</div>
-
-				<div class="step">
-					<div class="step-number">3</div>
-					<h3><span class="emoji">⏱️</span> Choose a timer</h3>
-					<p>
-						After setting your purpose, choose a timer: 1 min, 10 min,
-						custom duration, or no timer at all. The visual countdown
-						keeps you focused and accountable. When time's up, extend
-						or start fresh.
-					</p>
-				</div>
-
-				<div class="step">
-					<div class="step-number">4</div>
-					<h3><span class="emoji">⚙️</span> Customize settings</h3>
-					<p>
-						Right-click the extension icon and select "Options" to
-						manage your website list, set active hours (e.g., only
-						during work hours), and switch between 12/24-hour formats.
-					</p>
-				</div>
-			</div>
+			</footer>
 		</div>
 
-		<footer class="footer">
-			<div class="footer-links">
-				<a href="https://www.linkedin.com/in/divy-kairoth/" target="_blank">Connect on LinkedIn</a>
-				<a href="https://github.com/kairothq/Mindlessly" target="_blank">View on GitHub</a>
-				<a href="mailto:divykairoth@gmail.com?subject=Mindlessly%20Ticket">Get Support</a>
-				<a href="https://web.whatsapp.com" target="_blank">WhatsApp</a>
-			</div>
-			<p class="footer-credit">
-				Made with focus by <a href="https://www.linkedin.com/in/divy-kairoth/" target="_blank">Divy Kairoth</a>
-			</p>
-		</footer>
+		<script src="js/onboarding.js"></script>
 	</body>
 </html>

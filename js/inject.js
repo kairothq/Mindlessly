@@ -384,19 +384,29 @@ template.innerHTML = /*html*/ `
 
 		#input:focus::after {
 			position: absolute;
-			top: 0;
-			left: 100%;
+			top: 50%;
+			left: calc(100% + 48px);
 			display: flex;
 			align-items: center;
-			height: 100%;
-			padding: 0px 48px;
-			color: #333;
+			height: auto;
+			padding: 6px 12px;
+			color: #666;
+			background: rgba(0, 0, 0, 0.04);
+			border: 1px solid rgba(0, 0, 0, 0.06);
+			border-radius: 6px;
 			white-space: nowrap;
-			opacity: 1;
-			content: '→ Press Tab';
+			opacity: 0.6;
+			content: "press 'tab'";
 			pointer-events: none;
 			transition: opacity .3s;
 			font-weight: 500;
+			font-size: 11px;
+			transform: translateY(-50%);
+			letter-spacing: 0.3px;
+		}
+
+		#input.hide-tab-hint:focus::after {
+			display: none !important;
 		}
 
 		#input:empty::after {
@@ -1297,6 +1307,12 @@ class Intention extends HTMLElement {
 				e.stopImmediatePropagation()
 				// Stop focus protection to allow normal flow
 				this.stopFocusProtection()
+
+				// Track Tab usage and hide hint after 3 uses
+				if (e.key === 'Tab') {
+					this.trackTabUsage()
+				}
+
 				this.input.blur()
 			}
 		})
@@ -1337,6 +1353,43 @@ class Intention extends HTMLElement {
 				this.focusProtection = null
 			}
 		}
+
+		/**
+		 * Track Tab key usage and hide hint after 3 uses
+		 */
+		this.trackTabUsage = () => {
+			try {
+				const TAB_HINT_KEY = 'mindlessly_tab_hint_count'
+				let count = parseInt(localStorage.getItem(TAB_HINT_KEY) || '0', 10)
+				count++
+				localStorage.setItem(TAB_HINT_KEY, count.toString())
+
+				// Hide hint after 3 uses
+				if (count >= 3) {
+					this.input.classList.add('hide-tab-hint')
+				}
+			} catch (e) {
+				// localStorage might not be available, fail silently
+			}
+		}
+
+		/**
+		 * Check if Tab hint should be hidden on initialization
+		 */
+		this.checkTabHintVisibility = () => {
+			try {
+				const TAB_HINT_KEY = 'mindlessly_tab_hint_count'
+				const count = parseInt(localStorage.getItem(TAB_HINT_KEY) || '0', 10)
+				if (count >= 3) {
+					this.input.classList.add('hide-tab-hint')
+				}
+			} catch (e) {
+				// localStorage might not be available, fail silently
+			}
+		}
+
+		// Check Tab hint visibility on initialization
+		this.checkTabHintVisibility()
 
 		/**
 		 * Handle timer selection events
